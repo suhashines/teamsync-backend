@@ -12,6 +12,12 @@ git clone <repo-url>
 cd teamsync-backend
 ```
 
+* install the dependecies
+
+```bash
+./mvnw clean install
+```
+
 * run the tomcat server
 
 ```bash
@@ -24,7 +30,7 @@ cd teamsync-backend
 
 You should see 
 
-```json
+```bash
 I am healthy
 ```
 
