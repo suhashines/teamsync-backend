@@ -12,6 +12,13 @@ git clone <repo-url>
 cd teamsync-backend
 ```
 
+* run the docker container
+
+```bash
+docker compose up -d
+
+```
+
 * install the dependecies
 
 ```bash
