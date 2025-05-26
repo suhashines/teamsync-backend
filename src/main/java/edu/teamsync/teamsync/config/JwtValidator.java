@@ -68,7 +68,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -83,7 +82,6 @@ import java.util.List;
 public class JwtValidator extends OncePerRequestFilter {
     private final SecretKey key;
 
-    @Autowired
     public JwtValidator(JwtConstant jwtConstant) {
         this.key = Keys.hmacShaKeyFor(jwtConstant.getSecretKey().getBytes());
     }
