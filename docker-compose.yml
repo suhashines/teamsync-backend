@@ -1,17 +1,29 @@
+
+version: '3.8'
 services:
-  postgres:
+  db:
     image: postgres:15.1-alpine
-    container_name: teamsync-db 
-    restart: always
     environment:
+      POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 123
-      POSTGRES_DB: postgres
     volumes:
-      - db-data:/var/lib/postgresql/data
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql # if you use flyway or liquibase, then you can comment this line
+      - db_data:/var/lib/postgresql/data
     ports:
       - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
+  flyway:
+    image: flyway/flyway:10
+    command: -url=jdbc:postgresql://db:5432/postgres -schemas=public -user=postgres -password=123 migrate
+    volumes:
+      - ./flyway/sql:/flyway/sql
+    depends_on:
+      db:
+        condition: service_healthy
 volumes:
-  db-data:
+  db_data:
