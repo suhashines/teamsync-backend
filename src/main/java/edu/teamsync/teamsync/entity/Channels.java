@@ -1,0 +1,39 @@
+package edu.teamsync.teamsync.entity;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
+
+@Entity
+@Table(name = "Channels")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Channels {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ChannelType type;
+
+    @ManyToOne
+    @JoinColumn(name = "project_id")
+    private Projects project;
+
+    @ElementCollection
+    private List<Long> members;
+
+    public enum ChannelType {
+        direct, group
+    }
+}
