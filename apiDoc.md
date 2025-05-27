@@ -147,5 +147,10 @@
 ## To-Do
 
 - implement /auth/register and /auth/login
-- login as sadat@gmail.com , password: 123
+- login as sadat@gmail.com , password: 123 , you will get a jwt token
+- use the jwt in the header like this : 
+
+```json
+Authorization: Bearer <jwt-token>
+```
 - then fetch the tasks by /api/tasks
