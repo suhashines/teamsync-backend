@@ -16,10 +16,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 
 @RestController
@@ -97,6 +96,28 @@ public class AuthController {
 //        }
     }
 
+    @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal() == "anonymousUser") {
+            return new ResponseEntity<>(Map.of("message", "Unauthorized"), HttpStatus.UNAUTHORIZED);
+        }
+
+        String email = authentication.getName();
+        Users user = userRepository.findByEmail(email);
+
+        if (user == null) {
+            return new ResponseEntity<>(Map.of("message", "User not found"), HttpStatus.NOT_FOUND);
+        }
+
+        var response = new Object() {
+            public String name = user.getName();
+            public String profile_picture = user.getProfilePicture();
+            public String designation = user.getDesignation();
+        };
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 
     private Authentication authenticate(String username, String password) {
         UserDetails userDetails = customUserService.loadUserByUsername(username);
