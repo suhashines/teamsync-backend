@@ -34,7 +34,5 @@ public class Users {
 
     private LocalDate joinDate;
 
-    private Float Buyer;
-
     private Boolean predictedBurnoutRisk;
 }

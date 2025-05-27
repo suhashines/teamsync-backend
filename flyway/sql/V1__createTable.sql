@@ -8,6 +8,8 @@ CREATE TYPE mood_trend AS ENUM ('upward', 'downward', 'stable');
 CREATE TYPE reaction_type AS ENUM ('like', 'love', 'haha', 'wow', 'sad', 'angry', 'celebrate', 'support', 'insightful');
 CREATE TYPE project_role AS ENUM ('owner', 'admin', 'member', 'guest', 'viewer');
 
+
+--- suggestions : UUID ---
 -- Users table
 CREATE TABLE Users (
     id SERIAL PRIMARY KEY,
