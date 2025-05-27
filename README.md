@@ -23,7 +23,7 @@ docker compose up -d
 
 - connect with the container
 ```bash
-docker exec -it teamsync-db-1 psql -U postgres -d postgres
+docker exec -it <container-name> psql -U postgres -d postgres
 
 ```
 it will open psql in command line like this-
