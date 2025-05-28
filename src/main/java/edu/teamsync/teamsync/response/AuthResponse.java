@@ -10,6 +10,8 @@ public class AuthResponse {
         this.message = message;
     }
 
+    // wow notun kaj
+
     // Getters and setters would typically be here
 
     public String getJwt() {
