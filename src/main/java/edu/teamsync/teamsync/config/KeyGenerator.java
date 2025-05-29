@@ -1,11 +1,10 @@
 package edu.teamsync.teamsync.config;
 
-import javax.crypto.KeyGenerator;
 import java.util.Base64;
 
-public class KeyGeneratorUtil {
+public class KeyGenerator {
     public static void main(String[] args) throws Exception {
-        KeyGenerator keyGen = KeyGenerator.getInstance("HmacSHA256");
+        javax.crypto.KeyGenerator keyGen = javax.crypto.KeyGenerator.getInstance("HmacSHA256");
         byte[] key = keyGen.generateKey().getEncoded();
         System.out.println(Base64.getEncoder().encodeToString(key));
     }
