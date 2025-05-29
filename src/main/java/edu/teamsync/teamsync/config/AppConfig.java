@@ -61,7 +61,7 @@ public class AppConfig {
         http
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/register", "/auth/login").permitAll()
+                        .requestMatchers("/auth/register", "/auth/login","/api/health").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtValidator, BasicAuthenticationFilter.class)
@@ -84,14 +84,25 @@ public class AppConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5000")); // your frontend origin
+
+        // Allow multiple origins for flexibility
+        config.setAllowedOrigins(List.of(
+                "http://localhost:5000", // Frontend
+                "http://127.0.0.1:5000", // Alternate frontend form
+                "chrome-extension://*", // For Postman/Bruno browser extensions (optional)
+                "*" // Allows any origin (only safe without credentials)
+        ));
+
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
+
+        // WARNING: allowCredentials + allowedOrigins=* is invalid and will be blocked by Spring
+        config.setAllowCredentials(false); // Set to false if using "*" in allowedOrigins
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
 
         return source;
     }
+
 }
