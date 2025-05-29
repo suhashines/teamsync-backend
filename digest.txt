@@ -1,0 +1,501 @@
+Directory structure:
+└── exception/
+    ├── DBExceptionHandler.java
+    ├── ErrorMessage.java
+    ├── HTTPExceptionHandler.java
+    ├── ImportException.java
+    ├── UnexpectedExceptionHandler.java
+    ├── UserException.java
+    ├── ValidationExceptionHandler.java
+    └── http/
+        ├── NotFoundException.java
+        └── UnauthorizedException.java
+
+================================================
+File: DBExceptionHandler.java
+================================================
+package edu.teamsync.teamsync.exception;
+
+import jakarta.persistence.OptimisticLockException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+@ControllerAdvice
+@ResponseBody
+@Order(Ordered.HIGHEST_PRECEDENCE)
+public class DBExceptionHandler {
+    private static final Logger logger = LoggerFactory.getLogger(DBExceptionHandler.class);
+
+    @Value("${debug:false}")
+    boolean debug;
+
+    public static final Pattern UNIQUE_KEY = Pattern.compile("[a-zA-Z0-9_]+_key");
+    public static final Pattern CHECK_CONSTRAINT = Pattern.compile("[a-zA-Z0-9_]+_check");
+    public static final Pattern FOREIGN_KEY = Pattern.compile("[a-zA-Z0-9_]+_fkey");
+
+    public ErrorMessage convertMessage(DataIntegrityViolationException e) {
+        logger.error("DataIntegrityViolationException: {}", e.getMessage());
+        if (e.getMessage().contains("unique constraint")) {
+            Matcher matched = UNIQUE_KEY.matcher(e.getMessage());
+
+            return ErrorMessage.builder()
+                    .code("DUPLICATE_ENTRY")
+                    .message(
+                        matched.find() ?
+                        "Duplicate entry for " + matched.group().replace("_key", "") :
+                        "Duplicate entry for resource"
+                    )
+                    .errors(debug ? List.of(e.getMessage()) : null)
+                    .status(HttpStatus.CONFLICT)
+                    .build();
+
+        } else if (e.getMessage().contains("check constraint")) {
+            Matcher matched = CHECK_CONSTRAINT.matcher(e.getMessage());
+
+            return ErrorMessage.builder()
+                    .code("INVALID_VALUE")
+                    .message(
+                        matched.find() ?
+                        "Invalid value for " + matched.group().replace("_check", "") :
+                        "Invalid value for resource"
+                    )
+                    .errors(debug ? List.of(e.getMessage()) : null)
+                    .status(HttpStatus.BAD_REQUEST)
+                    .build();
+        } else if (e.getMessage().contains("foreign key")) {
+            Matcher matched = FOREIGN_KEY.matcher(e.getMessage());
+            return ErrorMessage.builder()
+                    .code("FOREIGN_KEY_CONSTRAINT")
+                    .message(
+                        matched.find() ?
+                        "Foreign key constraint violation for " + matched.group().replace("_fkey", "") :
+                        "Foreign key constraint violation"
+                    )
+                    .errors(debug ? List.of(e.getMessage()) : null)
+                    .status(HttpStatus.CONFLICT)
+                    .build();
+        } else if (e.getMessage().contains("null")) {
+            return ErrorMessage.builder()
+                    .code("REQUIRED_FIELD_MISSING")
+                    .message("Required field is missing")
+                    .errors(debug ? List.of(e.getMessage()) : null)
+                    .status(HttpStatus.BAD_REQUEST)
+                    .build();
+        } else {
+            return ErrorMessage.builder()
+                    .code("DATA_INTEGRITY_VIOLATION")
+                    .message("Data integrity violation")
+                    .errors(debug ? List.of(e.getMessage()) : null)
+                    .status(HttpStatus.CONFLICT)
+                    .build();
+        }
+    }
+
+    /**
+     * Handle conflict.
+     * This method maps DataIntegrityViolationException to HTTP status code 409 / 400
+     * 
+     * @param e DataIntegrityViolationException
+     * @return ErrorMessage {@link ErrorMessage}
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorMessage> handleConflict(DataIntegrityViolationException e) {
+        ErrorMessage msg = convertMessage(e);
+        return new ResponseEntity<>(msg, msg.getStatus());
+    }
+
+    /**
+     * Handle conflict.
+     * This method maps OptimisticLockException to HTTP status code 409
+     * @param e OptimisticLockException
+     * @return ErrorMessage {@link ErrorMessage}
+     */
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler({OptimisticLockException.class, ObjectOptimisticLockingFailureException.class})
+    public ErrorMessage handleConflict(Exception e) {
+        return ErrorMessage.builder()
+                .code("DATA_MODIFIED")
+                .message("Data has been modified by another user. Please refresh and try again")
+                .errors(debug ? List.of(e.getMessage()) : null)
+                .status(HttpStatus.CONFLICT)
+                .build();
+    }
+}
+
+
+
+================================================
+File: ErrorMessage.java
+================================================
+package edu.teamsync.teamsync.exception;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
+import org.springframework.http.HttpStatus;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * The type Error message.
+ * This class is used to send the error message response.
+ * The response contains the error code and the error message.
+ * 
+ * @attribute code (String): Error code
+ * @attribute message (String): Error message
+ * @attribute details (Map<String, String>)
+ * @attribute errors (List<String>)
+ * @attribute status (HttpStatus)
+ */
+@Schema(name = "ErrorMessage", description = "Error message response")
+@Data
+@Builder
+@AllArgsConstructor
+@RequiredArgsConstructor
+public class ErrorMessage {
+    @Schema(example = "INVALID_REQUEST_PARAMETER", description = "Error code")
+    private final String code;
+
+    @Schema(example = "Invalid email or password", description = "Error message")
+    private final String message;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Map<String, String> details;
+
+    @Schema()
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private List<String> errors;
+
+    @Schema(hidden = true)
+    @JsonIgnore
+    private HttpStatus status;
+}
+
+
+
+================================================
+File: HTTPExceptionHandler.java
+================================================
+package edu.teamsync.teamsync.exception;
+
+import edu.teamsync.teamsync.dto.ErrorMessageDto;
+import edu.teamsync.teamsync.exception.http.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.dao.InvalidDataAccessResourceUsageException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ControllerAdvice
+@ResponseBody
+@Order(Ordered.HIGHEST_PRECEDENCE)
+public class HTTPExceptionHandler {
+    @Value("${debug:false}")
+    boolean debug;
+
+    Logger logger = LoggerFactory.getLogger(HTTPExceptionHandler.class);
+
+    /**
+     * Handle not found error.
+     * This method maps NotFoundException to HTTP status code 404
+     */
+
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(NotFoundException.class)
+    public ErrorMessage handleNotFound(Exception e) {
+
+        logger.error("NOT FOUND", e);
+        return new ErrorMessage("NOT_FOUND", e.getMessage());
+    }
+
+     /**
+     * Handle security exception.
+     * This method maps SecurityException to HTTP status code 403
+     */
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler(SecurityException.class)
+    public ErrorMessageDto handleSecurityException(SecurityException e) {
+        logger.error("FORBIDDEN", e);
+        return new ErrorMessageDto(e.getMessage(), "FORBIDDEN");
+    }
+
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler(InvalidDataAccessResourceUsageException.class)
+    public ErrorMessageDto handleUnauthorizedException(InvalidDataAccessResourceUsageException e) {
+        logger.error("UNAUTHORIZED", e);
+        return new ErrorMessageDto("Invalid authorization headers", "UNAUTHORIZED");
+    }
+}
+
+
+
+================================================
+File: ImportException.java
+================================================
+package edu.teamsync.teamsync.exception;
+
+import java.util.Map;
+
+public class ImportException extends RuntimeException {
+    private final String scope;
+
+    public ImportException(String scope, String message) {
+        super(message);
+        this.scope = scope;
+    }
+
+    public Map<String, String> toMap() {
+        return Map.of(scope, getMessage());
+    }
+}
+
+
+
+================================================
+File: UnexpectedExceptionHandler.java
+================================================
+package edu.teamsync.teamsync.exception;
+
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * The type Global Controller Exception Handler. This class maps exceptions to HTTP status codes
+ */
+@ControllerAdvice
+@ResponseBody
+public class UnexpectedExceptionHandler {
+    @Value("${debug:false}")
+    boolean debug;
+
+    Logger logger = LoggerFactory.getLogger(UnexpectedExceptionHandler.class);
+
+
+    /**
+     * Handle internal server error.
+     * This method maps all other exceptions that are not matched
+     * with any other specific exception to HTTP status code 500
+     * @param e the exception
+     * @return the error message
+     */
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(Exception.class)
+    public ErrorMessage handleInternalServerError(Exception e) {
+
+        logger.error("INTERNAL SERVER ERROR", e);
+        return ErrorMessage.builder()
+                .code("INTERNAL_SERVER_ERROR")
+                .message("Something went wrong. Please try again later")
+                .errors(debug ? List.of(e.getMessage()) : null)
+                .details(Map.of(e.getClass().getName(), e.getMessage()))
+                .build();
+    }
+}
+
+
+
+================================================
+File: UserException.java
+================================================
+package edu.teamsync.teamsync.exception;
+
+public class UserException extends Exception {
+    public UserException(String msg) {
+        super(msg);
+    }
+}
+
+
+
+
+================================================
+File: ValidationExceptionHandler.java
+================================================
+package edu.teamsync.teamsync.exception;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.data.mapping.PropertyReferenceException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.BindException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+import jakarta.validation.ConstraintViolationException;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@ControllerAdvice
+@ResponseBody
+@Order(Ordered.HIGHEST_PRECEDENCE)
+public class ValidationExceptionHandler {
+
+    @Value("${debug:false}")
+    boolean debug;
+
+    /**
+     * Handle bad request.
+     * <p>
+     * This method maps IllegalArgumentException to HTTP status code 400
+     */
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler({
+            IllegalArgumentException.class,
+            ConstraintViolationException.class,
+            PropertyReferenceException.class
+    })
+    public ErrorMessage handleBadRequest(Exception e) {
+        return ErrorMessage.builder()
+                .code("INVALID_REQUEST_PARAMETER")
+                .message(e.getMessage())
+                .errors(debug ? List.of(e.getMessage()) : null)
+                .build();
+    }
+
+    /**
+     * Handle method argument not valid.
+     * This method maps MethodArgumentNotValidException to HTTP status code 400
+     */
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(BindException.class)
+    public ErrorMessage handleMethodArgumentNotValid(BindException e) {
+        List<String> messages = new ArrayList<>();
+        Map<String, String> details = new HashMap<>();
+
+        e.getBindingResult().getFieldErrors().forEach(fieldError -> {
+            messages.add(fieldError.getDefaultMessage());
+            if (details.containsKey(fieldError.getField())) {
+                details.put(fieldError.getField(), details.get(fieldError.getField()) + ", " + fieldError.getDefaultMessage());
+            } else {
+                details.put(fieldError.getField(), fieldError.getDefaultMessage());
+            }
+        });
+
+        e.getBindingResult().getGlobalErrors().forEach(globalError -> {
+            messages.add(globalError.getDefaultMessage());
+        });
+
+        return ErrorMessage.builder()
+                .code("INVALID_REQUEST_BODY_FIELD")
+                .message("Invalid request body field(s)")
+                .errors(messages)
+                .details(details)
+                .build();
+    }
+
+    /**
+     * Handle invalid body type exception.
+     */
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ErrorMessage handleHttpMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException e) {
+        return ErrorMessage.builder()
+                .code("INVALID_BODY_TYPE")
+                .message("Invalid body type, only application/json is supported")
+                .errors(debug ? List.of(e.getMessage()) : null)
+                .build();
+    }
+
+    /**
+     * Handle invalid body type exception.
+     */
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ErrorMessage handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        return ErrorMessage.builder()
+                .code("INVALID_BODY")
+                .message("Invalid body, please provide a valid JSON body")
+                .errors(debug ? List.of(e.getMessage()) : null)
+                .build();
+    }
+
+    /**
+     * Handle invalid request type exception.
+     */
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ErrorMessage handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException e) {
+        return ErrorMessage.builder()
+                .code("INVALID_REQUEST_METHOD")
+                .message("Invalid request method, please use appropriate method")
+                .errors(debug ? List.of(e.getMessage()) : null)
+                .build();
+    }
+}
+
+
+
+================================================
+File: http/NotFoundException.java
+================================================
+package edu.teamsync.teamsync.exception.http;
+
+/**
+ * This class is used to handle not found exception
+ * HTTP Status Code: 404
+ */
+public class NotFoundException extends RuntimeException {
+    public NotFoundException(String message) {
+        super(message);
+    }
+}
+
+
+
+================================================
+File: http/UnauthorizedException.java
+================================================
+package edu.teamsync.teamsync.exception.http;
+
+/**
+ * This class is used to handle unauthorized exception
+ * HTTP Status Code: 401
+ */
+public class UnauthorizedException extends RuntimeException {
+    public UnauthorizedException(String message) {
+        super(message);
+    }
+}
+
