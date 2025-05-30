@@ -11,7 +11,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "FeedPosts")
+@Table(name = "feedposts")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -33,19 +33,22 @@ public class FeedPosts {
     private String content;
 
     @ElementCollection
+    @Column(name = "media_url")
     private List<String> mediaUrls;
 
-    @Column(nullable = false)
-    private ZonedDateTime createdAt = ZonedDateTime.now();
 
+    @Column(name = "created_at", nullable = false)
+    private ZonedDateTime createdAt = ZonedDateTime.now();
+    @Column(name = "event_date")
     private LocalDate eventDate;
 
     @ElementCollection
+    @Column(name = "poll_option")
     private List<String> pollOptions;
 
-    @Column(nullable = false)
+    @Column(name = "is_ai_generated", nullable = false)
     private boolean isAiGenerated = false;
-
+    @Column(name = "ai_summary")
     private String aiSummary;
 
     public enum FeedPostType {

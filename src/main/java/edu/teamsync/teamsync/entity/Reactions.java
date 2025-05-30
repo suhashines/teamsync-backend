@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.ZonedDateTime;
 
 @Entity
-@Table(name = "Reactions")
+@Table(name = "reactions")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -27,7 +27,7 @@ public class Reactions {
     @Column(nullable = false)
     private ReactionType reactionType;
 
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false)
     private ZonedDateTime createdAt = ZonedDateTime.now();
 
     @ManyToOne
