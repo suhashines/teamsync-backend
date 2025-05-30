@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.ZonedDateTime;
 
 @Entity
-@Table(name = "ProjectMembers")
+@Table(name = "projectmembers")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -29,7 +29,7 @@ public class ProjectMembers {
     @Column(nullable = false)
     private ProjectRole role;
 
-    @Column(nullable = false)
+    @Column(name = "joined_at", nullable = false)
     private ZonedDateTime joinedAt = ZonedDateTime.now();
 
     public enum ProjectRole {

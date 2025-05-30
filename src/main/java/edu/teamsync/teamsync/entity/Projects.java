@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.ZonedDateTime;
 
 @Entity
-@Table(name = "Projects")
+@Table(name = "projects")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -28,6 +28,6 @@ public class Projects {
     @JoinColumn(name = "created_by", nullable = false)
     private Users createdBy;
 
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false)
     private ZonedDateTime createdAt = ZonedDateTime.now();
 }

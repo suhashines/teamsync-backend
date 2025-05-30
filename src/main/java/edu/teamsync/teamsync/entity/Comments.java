@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.ZonedDateTime;
 
 @Entity
-@Table(name = "Comments")
+@Table(name = "comments")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -37,6 +37,6 @@ public class Comments {
     @JoinColumn(name = "parent_comment_id")
     private Comments parentComment;
 
-    @Column(nullable = false)
+    @Column(name = "reply_count", nullable = false)
     private int replyCount = 0;
 }
