@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Entity
-@Table(name = "Events")
+@Table(name = "events")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -31,6 +31,8 @@ public class Events {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+
+
     private EventType type;
 
     @Column(nullable = false)
@@ -39,7 +41,8 @@ public class Events {
     @ElementCollection
     private List<Long> participants;
 
-    private LocalDate tentativeStartingDate; // New field for tentative starting date
+    @Column(name = "tentative_starting_date")
+    private LocalDate tentativeStartingDate;
 
     public enum EventType {
         Birthday, Workiversary, Outing

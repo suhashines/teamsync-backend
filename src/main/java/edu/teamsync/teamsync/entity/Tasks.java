@@ -11,7 +11,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "Tasks")
+@Table(name = "tasks")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -55,7 +55,7 @@ public class Tasks {
     @ManyToOne
     @JoinColumn(name = "assigned_by")
     private Users assignedBy;
-
+    @Column(name = "assigned_at")
     private ZonedDateTime assignedAt;
 
     @ManyToOne
@@ -64,7 +64,7 @@ public class Tasks {
 
     @ElementCollection
     private List<String> attachments;
-
+    @Column(name = "tentative_starting_date")
     private LocalDate tentativeStartingDate; // New field for tentative starting date
 
     public enum TaskStatus {
