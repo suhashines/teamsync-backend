@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.ZonedDateTime;
 
 @Entity
-@Table(name = "TaskStatusHistory")
+@Table(name = "taskstatushistory")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -31,7 +31,7 @@ public class TaskStatusHistory {
     @JoinColumn(name = "changed_by", nullable = false)
     private Users changedBy;
 
-    @Column(nullable = false)
+    @Column(name = "changed_at", nullable = false)
     private ZonedDateTime changedAt = ZonedDateTime.now();
 
     private String comment;

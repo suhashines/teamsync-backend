@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "PollVotes")
+@Table(name = "pollvotes")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,6 +25,6 @@ public class PollVotes {
     @JoinColumn(name = "user_id", nullable = false)
     private Users user;
 
-    @Column(nullable = false)
+    @Column(name = "selected_option", nullable = false)
     private String selectedOption;
 }

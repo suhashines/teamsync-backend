@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.ZonedDateTime;
 
 @Entity
-@Table(name = "Appreciations")
+@Table(name = "appreciations")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
