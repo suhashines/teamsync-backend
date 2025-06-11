@@ -1,0 +1,15 @@
+meta {
+  name: get-all-appriciations
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{APPRECIATIONS_SERVER}}
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{jwt}}
+}

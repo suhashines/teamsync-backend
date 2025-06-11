@@ -1,5 +1,5 @@
 package edu.teamsync.teamsync.config;
-
+import edu.teamsync.teamsync.service.TokenBlacklistService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -21,7 +21,7 @@ public class AppConfig {
         http
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/register", "/auth/login","/api/health").permitAll()
+                        .requestMatchers("/auth/register", "/auth/login","/api/health","/auth/refresh").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtValidator, BasicAuthenticationFilter.class)
@@ -32,8 +32,8 @@ public class AppConfig {
     }
 
     @Bean
-    public JwtValidator jwtValidator(JwtConstant jwtConstant) {
-        return new JwtValidator(jwtConstant);
+    public JwtValidator jwtValidator(JwtConstant jwtConstant, TokenBlacklistService tokenBlacklistService) {
+        return new JwtValidator(jwtConstant,tokenBlacklistService);
     }
 
     @Bean

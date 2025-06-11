@@ -1,49 +1,98 @@
 package edu.teamsync.teamsync.controller;
 
-import edu.teamsync.teamsync.entity.Users;
-import edu.teamsync.teamsync.exception.UserException;
-import edu.teamsync.teamsync.repository.UserRepository;
+import edu.teamsync.teamsync.dto.userDTO.UserCreationDTO;
+import edu.teamsync.teamsync.dto.userDTO.UserResponseDTO;
+import edu.teamsync.teamsync.dto.userDTO.UserUpdateDTO;
+import edu.teamsync.teamsync.response.SuccessResponse;
+import edu.teamsync.teamsync.service.UserService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
+
+@Slf4j
 @RestController
 @RequestMapping("/users")
+@RequiredArgsConstructor
 public class UserController {
 
-    private final UserRepository userRepository;
+    private final UserService userService;
 
-    public UserController(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    @PostMapping
+    public ResponseEntity<SuccessResponse<Void>> createUser(@Valid @RequestBody UserCreationDTO userDto) {
+        userService.createUser(userDto);
+
+        SuccessResponse<Void> response = SuccessResponse.<Void>builder()
+                .code(HttpStatus.CREATED.value())
+                .status(HttpStatus.CREATED)
+                .message("User created successfully")
+//                .data(createdUser)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<SuccessResponse<List<UserResponseDTO>>> getAllUsers() {
+        List<UserResponseDTO> users = userService.getAllUsers();
+
+        SuccessResponse<List<UserResponseDTO>> response = SuccessResponse.<List<UserResponseDTO>>builder()
+                .code(HttpStatus.OK.value())
+                .status(HttpStatus.OK)
+                .message("Users retrieved successfully")
+                .data(users)
+                .metadata(Map.of("count", users.size()))
+                .build();
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getUserById(@PathVariable Long id) {
-        try {
-            Users user = userRepository.findById(id)
-                    .orElseThrow(() -> new UserException("User not found with id: " + id));
+    public ResponseEntity<SuccessResponse<UserResponseDTO>> getUser(@PathVariable Long id) {
+        UserResponseDTO user = userService.getUser(id);
 
-            // Construct the response object matching the example JSON
-            var response = new Object() {
-                public Long id = user.getId();
-                public String name = user.getName();
-                public String email = user.getEmail();
-                public String profilePicture = user.getProfilePicture();
-                public String designation = user.getDesignation();
-                public String birthdate = user.getBirthdate() != null ? user.getBirthdate().toString() : null;
-                public String joinDate = user.getJoinDate() != null ? user.getJoinDate().toString() : null;
-                public Boolean predictedBurnoutRisk = user.getPredictedBurnoutRisk();
-                public String message = "Success";
-            };
+        SuccessResponse<UserResponseDTO> response = SuccessResponse.<UserResponseDTO>builder()
+                .code(HttpStatus.OK.value())
+                .status(HttpStatus.OK)
+                .message("User retrieved successfully")
+                .data(user)
+                .build();
 
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } catch (UserException e) {
-            return new ResponseEntity<>(new Object() {
-                public String message = e.getMessage();
-            }, HttpStatus.NOT_FOUND);
-        }
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<SuccessResponse<Void>> updateUser(
+            @PathVariable Long id,
+            @Valid @RequestBody UserUpdateDTO userUpdateDTO) {
+
+        userService.updateUser(id, userUpdateDTO);
+
+        SuccessResponse<Void> response = SuccessResponse.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .status(HttpStatus.OK)
+                .message("User updated successfully")
+//                .data(updatedUser)
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<SuccessResponse<Void>> deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+
+        SuccessResponse<Void> response = SuccessResponse.<Void>builder()
+                .code(HttpStatus.NO_CONTENT.value())
+                .status(HttpStatus.OK)
+                .message("User deleted successfully")
+                .build();
+
+        return ResponseEntity.ok(response);
     }
 }

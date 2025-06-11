@@ -24,7 +24,7 @@ public class Reactions {
     private Users user;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name="reaction_type",nullable = false)
     private ReactionType reactionType;
 
     @Column(name = "created_at", nullable = false)

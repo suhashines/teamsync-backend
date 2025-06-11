@@ -1,0 +1,26 @@
+meta {
+  name: create-poll-votes
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{POLLVOTES_SERVER}}
+  body: json
+  auth: inherit
+}
+
+params:query {
+  : 
+}
+
+headers {
+  Authorization: Bearer {{jwt}}
+}
+
+body:json {
+  {
+    "poll_id": 5,
+    "selected_option": "Classic"
+  }
+}

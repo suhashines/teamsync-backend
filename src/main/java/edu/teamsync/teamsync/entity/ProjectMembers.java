@@ -10,6 +10,7 @@ import java.time.ZonedDateTime;
 
 @Entity
 @Table(name = "projectmembers")
+@IdClass(ProjectMemberId.class)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
