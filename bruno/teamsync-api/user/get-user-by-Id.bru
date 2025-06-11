@@ -1,0 +1,15 @@
+meta {
+  name: get-user-by-Id
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{USER_SERVER}}/24
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{jwt}}
+}

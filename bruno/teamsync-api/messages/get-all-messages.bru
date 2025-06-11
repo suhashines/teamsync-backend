@@ -1,0 +1,15 @@
+meta {
+  name: get-all-messages
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{CHANNEL_SERVER}}/1/messages
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{jwt}}
+}

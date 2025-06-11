@@ -1,0 +1,15 @@
+meta {
+  name: get-all-comments-of-feedpost
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{FEEDPOSTS_SERVER}}/40/comments
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{jwt}}
+}
