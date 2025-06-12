@@ -3,17 +3,26 @@ package edu.teamsync.teamsync.repository;
 import edu.teamsync.teamsync.entity.Tasks;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Tasks, Long> {
 
-    // Find tasks assigned to a specific user
-    List<Tasks> findByAssignedToId(Long userId);
+    @Query("SELECT t FROM Tasks t LEFT JOIN FETCH t.project LEFT JOIN FETCH t.assignedTo LEFT JOIN FETCH t.assignedBy LEFT JOIN FETCH t.parentTask WHERE t.id = :id")
+    Optional<Tasks> findByIdWithDetails(@Param("id") Long id);
 
-    // Find tasks within projects the user is a member of
-    @Query("SELECT t FROM Tasks t WHERE t.project.id IN (SELECT pm.project.id FROM ProjectMembers pm WHERE pm.user.id = :userId)")
-    List<Tasks> findByUserProjects(Long userId);
+    @Query("SELECT t FROM Tasks t WHERE t.parentTask.id = :parentTaskId")
+    List<Tasks> findSubtasksByParentTaskId(@Param("parentTaskId") Long parentTaskId);
+
+    // New method for getting tasks by project ID
+    @Query("SELECT t FROM Tasks t LEFT JOIN FETCH t.assignedTo LEFT JOIN FETCH t.assignedBy LEFT JOIN FETCH t.parentTask WHERE t.project.id = :projectId")
+    List<Tasks> findByProjectIdWithDetails(@Param("projectId") Long projectId);
+
+    // Method for getting tasks by project ID and status (useful for kanban)
+    @Query("SELECT t FROM Tasks t LEFT JOIN FETCH t.assignedTo LEFT JOIN FETCH t.assignedBy LEFT JOIN FETCH t.parentTask WHERE t.project.id = :projectId AND t.status = :status")
+    List<Tasks> findByProjectIdAndStatus(@Param("projectId") Long projectId, @Param("status") Tasks.TaskStatus status);
 }

@@ -1,60 +1,107 @@
+
 package edu.teamsync.teamsync.controller;
 
-import edu.teamsync.teamsync.entity.Tasks;
+import edu.teamsync.teamsync.dto.taskDTO.TaskCreationDTO;
+import edu.teamsync.teamsync.dto.taskDTO.TaskResponseDTO;
+import edu.teamsync.teamsync.dto.taskDTO.TaskUpdateDTO;
+import edu.teamsync.teamsync.exception.http.NotFoundException;
+import edu.teamsync.teamsync.response.SuccessResponse;
 import edu.teamsync.teamsync.service.TaskService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/tasks")
+@RequiredArgsConstructor
 public class TaskController {
 
-    @Autowired
-    private TaskService taskService;
+    private final TaskService tasksService;
+
+    @GetMapping("/{id}")
+    public ResponseEntity<SuccessResponse<TaskResponseDTO>> getTaskById(@PathVariable Long id) {
+        TaskResponseDTO task = tasksService.getTaskById(id);
+
+        SuccessResponse<TaskResponseDTO> response = SuccessResponse.<TaskResponseDTO>builder()
+                .code(HttpStatus.OK.value())
+                .status(HttpStatus.OK)
+                .message("Task retrieved successfully")
+                .data(task)
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
 
     @GetMapping
-    public ResponseEntity<List<Tasks>> getTasks() {
-        // Get email from SecurityContext (already validated by JwtValidator)
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
+    public ResponseEntity<SuccessResponse<List<TaskResponseDTO>>> getAllTasks() {
+        List<TaskResponseDTO> tasks = tasksService.getAllTasks();
 
-        List<Tasks> tasks = taskService.getTasksForUser(email);
-        return ResponseEntity.ok(tasks);
+        SuccessResponse<List<TaskResponseDTO>> response = SuccessResponse.<List<TaskResponseDTO>>builder()
+                .code(HttpStatus.OK.value())
+                .status(HttpStatus.OK)
+                .message("All tasks retrieved successfully")
+                .data(tasks)
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/project/{projectId}")
+    public ResponseEntity<SuccessResponse<List<TaskResponseDTO>>> getTasksByProjectId(@PathVariable Long projectId) {
+        List<TaskResponseDTO> tasks = tasksService.getTasksByProjectId(projectId);
+
+        SuccessResponse<List<TaskResponseDTO>> response = SuccessResponse.<List<TaskResponseDTO>>builder()
+                .code(HttpStatus.OK.value())
+                .status(HttpStatus.OK)
+                .message("Project tasks retrieved successfully")
+                .data(tasks)
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping
+    public ResponseEntity<SuccessResponse<Void>> createTask(@RequestBody TaskCreationDTO createDto) {
+        tasksService.createTask(createDto);
+
+        SuccessResponse<Void> response = SuccessResponse.<Void>builder()
+                .code(HttpStatus.CREATED.value())
+                .status(HttpStatus.CREATED)
+                .message("Task created successfully")
+//                .data(createdTask)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<SuccessResponse<Void>> updateTask(@PathVariable Long id, @RequestBody TaskUpdateDTO updateDto) {
+        tasksService.updateTask(id, updateDto);
+
+        SuccessResponse<Void> response = SuccessResponse.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .status(HttpStatus.OK)
+                .message("Task updated successfully")
+//                .data(updatedTask)
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<SuccessResponse<Void>> deleteTask(@PathVariable Long id) {
+        tasksService.deleteTask(id);
+
+        SuccessResponse<Void> response = SuccessResponse.<Void>builder()
+                .code(HttpStatus.NO_CONTENT.value())
+                .status(HttpStatus.OK)
+                .message("Task deleted successfully")
+                .build();
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 }
-
-//import edu.teamsync.teamsync.dto.TaskDTO;
-//import edu.teamsync.teamsync.service.TaskService;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.http.ResponseEntity;
-//import org.springframework.security.core.Authentication;
-//import org.springframework.security.core.context.SecurityContextHolder;
-//import org.springframework.web.bind.annotation.GetMapping;
-//import org.springframework.web.bind.annotation.RequestMapping;
-//import org.springframework.web.bind.annotation.RestController;
-//
-//import java.util.List;
-//
-//@RestController
-//@RequestMapping("/api/tasks")
-//public class TaskController {
-//
-//    @Autowired
-//    private TaskService taskService;
-//
-//    @GetMapping
-//    public ResponseEntity<List<TaskDTO>> getTasks() {
-//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//        String email = authentication.getName();
-//
-//        List<TaskDTO> tasks = taskService.getTasksForUser(email);
-//        return ResponseEntity.ok(tasks);
-//    }
-//}

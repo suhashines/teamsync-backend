@@ -1,0 +1,15 @@
+meta {
+  name: get-all-projects
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{PROJECT_SERVER}}
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{jwt}}
+}

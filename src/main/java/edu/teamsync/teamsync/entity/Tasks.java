@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -55,6 +57,7 @@ public class Tasks {
     @ManyToOne
     @JoinColumn(name = "assigned_by")
     private Users assignedBy;
+
     @Column(name = "assigned_at")
     private ZonedDateTime assignedAt;
 
@@ -62,10 +65,12 @@ public class Tasks {
     @JoinColumn(name = "parent_task_id")
     private Tasks parentTask;
 
-    @ElementCollection
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "attachments", columnDefinition = "text[]")
     private List<String> attachments;
+
     @Column(name = "tentative_starting_date")
-    private LocalDate tentativeStartingDate; // New field for tentative starting date
+    private LocalDate tentativeStartingDate;
 
     public enum TaskStatus {
         backlog, todo, in_progress, in_review, blocked, completed

@@ -1,0 +1,15 @@
+meta {
+  name: delete-user-by-Id
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{USER_SERVER}}/23
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{jwt}}
+}

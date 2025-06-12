@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -31,14 +33,13 @@ public class Events {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-
-
     private EventType type;
 
     @Column(nullable = false)
     private LocalDate date;
 
-    @ElementCollection
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "participants", columnDefinition = "bigint[]")
     private List<Long> participants;
 
     @Column(name = "tentative_starting_date")
