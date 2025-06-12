@@ -6,7 +6,6 @@ import edu.teamsync.teamsync.entity.FeedPosts;
 import edu.teamsync.teamsync.entity.Reactions;
 import edu.teamsync.teamsync.entity.Users;
 import edu.teamsync.teamsync.exception.http.NotFoundException;
-import edu.teamsync.teamsync.exception.UserException;
 import edu.teamsync.teamsync.mapper.ReactionMapper;
 import edu.teamsync.teamsync.repository.FeedPostRepository;
 import edu.teamsync.teamsync.repository.ReactionRepository;

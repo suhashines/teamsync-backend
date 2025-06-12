@@ -23,13 +23,13 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping(value = "/register", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<SuccessResponse<AuthResponseDTO>> registerUser(
+    public ResponseEntity<SuccessResponse<UserResponseDTO>> registerUser(
             @Valid @RequestBody UserCreationDTO userCreationDTO,
             HttpServletRequest request) {
 
-        AuthResponseDTO authResponse = authService.registerUser(userCreationDTO, request);
+        UserResponseDTO authResponse = authService.registerUser(userCreationDTO, request);
 
-        SuccessResponse<AuthResponseDTO> response = SuccessResponse.<AuthResponseDTO>builder()
+        SuccessResponse<UserResponseDTO> response = SuccessResponse.<UserResponseDTO>builder()
                 .code(HttpStatus.CREATED.value())
                 .status(HttpStatus.CREATED)
                 .message("User registered successfully")
