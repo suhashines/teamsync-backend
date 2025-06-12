@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +23,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -31,7 +34,6 @@ public class AuthService {
     private final UserRepository userRepository;
     private final JwtProvider jwtProvider;
     private final PasswordEncoder passwordEncoder;
-    private final CustomerUserServiceImplementation customUserService;
     private final UserMapper userMapper;
     private final AuthMapper authMapper;
     private final RefreshTokenService refreshTokenService;
@@ -39,7 +41,7 @@ public class AuthService {
     private final TokenBlacklistService tokenBlacklistService;
 
     @Transactional
-    public AuthResponseDTO registerUser(UserCreationDTO userCreationDTO, HttpServletRequest request) {
+    public UserResponseDTO registerUser(UserCreationDTO userCreationDTO, HttpServletRequest request) {
         // Check if email already exists
         Users existingUser = userRepository.findByEmail(userCreationDTO.getEmail());
         if (existingUser != null) {
@@ -63,13 +65,7 @@ public class AuthService {
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        String token = jwtProvider.generateToken(authentication);
-        String refreshToken = refreshTokenService.createRefreshToken(savedUser, request);
-
-        // Convert user to response DTO
-        UserResponseDTO userResponseDTO = userMapper.toResponseDTO(savedUser);
-
-        return authMapper.toAuthResponseDTO(userResponseDTO, token, refreshToken);
+        return userMapper.toResponseDTO(savedUser);
     }
 
     @Transactional
@@ -150,7 +146,7 @@ public class AuthService {
         user.setProfilePicture(requestDTO.getProfile_picture());
         user.setDesignation(requestDTO.getDesignation());
 
-       userRepository.save(user);
+        userRepository.save(user);
 
     }
     public void changePassword(PasswordChangeRequestDTO requestDTO) {
@@ -177,16 +173,28 @@ public class AuthService {
         passwordResetService.resetPassword(resetRequest);
     }
     private Authentication authenticate(String username, String password) {
-        UserDetails userDetails = customUserService.loadUserByUsername(username);
+        // Load user directly from repository
+        Users user = userRepository.findByEmail(username);
 
-        if (userDetails == null) {
+        if (user == null) {
             throw new BadCredentialsException("Invalid username");
         }
 
-        if (!passwordEncoder.matches(password, userDetails.getPassword())) {
+        if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new BadCredentialsException("Invalid password");
         }
 
-        return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        // Create authorities list (empty for now, you can add roles later if needed)
+        List<GrantedAuthority> authorities = new ArrayList<>();
+
+        // Create UserDetails object inline
+        org.springframework.security.core.userdetails.User userDetails =
+                new org.springframework.security.core.userdetails.User(
+                        user.getEmail(),
+                        user.getPassword(),
+                        authorities
+                );
+
+        return new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
     }
 }
