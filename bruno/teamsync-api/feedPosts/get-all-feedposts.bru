@@ -1,0 +1,15 @@
+meta {
+  name: get-all-feedposts
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{BASE_SERVER}}/feedposts
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{jwt}}
+}

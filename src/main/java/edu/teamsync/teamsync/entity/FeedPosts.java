@@ -1,3 +1,4 @@
+
 package edu.teamsync.teamsync.entity;
 
 import jakarta.persistence.*;
@@ -5,10 +6,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Type;
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "feedposts")
@@ -32,22 +33,25 @@ public class FeedPosts {
     @Column(nullable = false)
     private String content;
 
-    @ElementCollection
-    @Column(name = "media_url")
-    private List<String> mediaUrls;
+    // Use PostgreSQL array type directly
+    @Column(name = "poll_options", columnDefinition = "text[]")
+    private String[] pollOptions;
 
-
+    @Builder.Default
     @Column(name = "created_at", nullable = false)
     private ZonedDateTime createdAt = ZonedDateTime.now();
+
     @Column(name = "event_date")
     private LocalDate eventDate;
 
-    @ElementCollection
-    @Column(name = "poll_option")
-    private List<String> pollOptions;
+    // Use PostgreSQL array type directly
+    @Column(name = "media_urls", columnDefinition = "text[]")
+    private String[] mediaUrls;
 
+    @Builder.Default
     @Column(name = "is_ai_generated", nullable = false)
     private boolean isAiGenerated = false;
+
     @Column(name = "ai_summary")
     private String aiSummary;
 

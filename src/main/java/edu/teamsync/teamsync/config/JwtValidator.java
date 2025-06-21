@@ -7,7 +7,6 @@
 //import jakarta.servlet.ServletException;
 //import jakarta.servlet.http.HttpServletRequest;
 //import jakarta.servlet.http.HttpServletResponse;
-//import org.springframework.security.authentication.BadCredentialsException;
 //import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 //import org.springframework.security.core.Authentication;
 //import org.springframework.security.core.GrantedAuthority;
@@ -20,47 +19,48 @@
 //import java.util.List;
 //
 //public class JwtValidator extends OncePerRequestFilter {
+//    private final SecretKey key;
+//
+//    public JwtValidator(JwtConstant jwtConstant) {
+//        this.key = Keys.hmacShaKeyFor(jwtConstant.getSecretKey().getBytes());
+//    }
 //
 //    @Override
-//    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+//    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+//            throws ServletException, IOException {
+//
 //        String jwt = request.getHeader(JwtConstant.JWT_HEADER);
-//        if (jwt != null) {
+//
+//        if (jwt != null && jwt.startsWith("Bearer ")) {
 //            jwt = jwt.substring(7);
 //            try {
-//                // Generate secret key from constant
-//                SecretKey key = Keys.hmacShaKeyFor(JwtConstant.SECRET_KEY.getBytes());
-//
-//                // Parse and validate JWT
 //                Claims claims = Jwts.parserBuilder()
 //                        .setSigningKey(key)
 //                        .build()
 //                        .parseClaimsJws(jwt)
 //                        .getBody();
 //
-//                // Extract email and authorities from claims
-//                String email = String.valueOf(claims.get("email"));
-//                String authorities = String.valueOf(claims.get("authorities"));
+//                String email = claims.get("email", String.class);
+//                String authorities = claims.get("authorities", String.class);
 //
-//                // Convert authorities string to GrantedAuthority list
 //                List<GrantedAuthority> auths = AuthorityUtils.commaSeparatedStringToAuthorityList(authorities);
-//
-//                // Create authentication object
 //                Authentication authentication = new UsernamePasswordAuthenticationToken(email, null, auths);
-//
-//                // Set authentication in security context
 //                SecurityContextHolder.getContext().setAuthentication(authentication);
 //
 //            } catch (Exception e) {
-//                throw new BadCredentialsException("invalid token... from jwt validator");
+//                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+//                response.getWriter().write("Invalid JWT token");
+//                return;
 //            }
 //        }
 //        filterChain.doFilter(request, response);
 //    }
 //}
 
-
 package edu.teamsync.teamsync.config;
 
+import edu.teamsync.teamsync.service.RefreshTokenService;
+import edu.teamsync.teamsync.service.TokenBlacklistService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -74,7 +74,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
-
 import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.util.List;
@@ -82,19 +81,36 @@ import java.util.List;
 public class JwtValidator extends OncePerRequestFilter {
     private final SecretKey key;
 
-    public JwtValidator(JwtConstant jwtConstant) {
+    // Add this field to your JwtValidator
+    private final TokenBlacklistService tokenBlacklistService;
+
+    // Update constructor
+    public JwtValidator(JwtConstant jwtConstant,
+                        TokenBlacklistService tokenBlacklistService) {
         this.key = Keys.hmacShaKeyFor(jwtConstant.getSecretKey().getBytes());
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
+    // In your doFilterInternal method, add this check:
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
             throws ServletException, IOException {
 
         String jwt = request.getHeader(JwtConstant.JWT_HEADER);
-
         if (jwt != null && jwt.startsWith("Bearer ")) {
             jwt = jwt.substring(7);
+
             try {
+                // Check if token is blacklisted FIRST
+                if (tokenBlacklistService.isTokenBlacklisted(jwt)) {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("Token has been revoked");
+                    return;
+                }
+
+                // Your existing JWT validation code
                 Claims claims = Jwts.parserBuilder()
                         .setSigningKey(key)
                         .build()
