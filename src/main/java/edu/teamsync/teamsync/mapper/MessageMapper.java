@@ -29,5 +29,6 @@ public interface MessageMapper {
     @Mapping(target = "channel", ignore = true)
     @Mapping(target = "recipient", ignore = true)
     @Mapping(target = "threadParent", ignore = true)
+    @Mapping(target = "id", ignore = true)
     Messages toEntity(MessageUpdateDTO dto);
 }

@@ -29,6 +29,7 @@ public class Projects {
     @JoinColumn(name = "created_by", nullable = false)
     private Users createdBy;
 
+    @Builder.Default
     @Column(name = "created_at", nullable = false)
     private ZonedDateTime createdAt = ZonedDateTime.now();
 

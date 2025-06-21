@@ -24,8 +24,11 @@ public interface EventMapper {
 
     @Mapping(target = "parentPost", ignore = true)
     @Mapping(target = "tentativeStartingDate", ignore = true)
+    @Mapping(target = "id", ignore = true)
     Events toEntity(EventUpdateDTO dto);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "parentPost", ignore = true)
+    @Mapping(target = "tentativeStartingDate", ignore = true)
     void updateEventFromDTO(EventUpdateDTO eventUpdateDTO, @MappingTarget Events event);
 }

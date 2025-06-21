@@ -13,5 +13,6 @@ public interface ReactionMapper {
     ReactionResponseDTO reactionResponseToDTO(Reactions reaction);
 
     List<ReactionResponseDTO> reactionsResponseToDTO(List<Reactions> reactions);
+    @Mapping(source = "user.id", target = "userId")
     List<ReactionDetailDTO> reactionsToDTO(List<Reactions> reactions);
 }

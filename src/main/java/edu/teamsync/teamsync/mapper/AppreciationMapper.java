@@ -31,5 +31,6 @@ public interface AppreciationMapper {
     @Mapping(target = "parentPost", ignore = true)
     @Mapping(target = "fromUser", ignore = true)
     @Mapping(target = "toUser", ignore = true)
+    @Mapping(target = "id", ignore = true)
     void updateEntityFromDTO(AppreciationUpdateDTO dto, @MappingTarget Appreciations entity);
 }
