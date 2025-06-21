@@ -34,6 +34,7 @@ public class Messages {
     @Column(nullable = false)
     private String content;
 
+    @Builder.Default
     @Column(nullable = false)
     private ZonedDateTime timestamp = ZonedDateTime.now();
 

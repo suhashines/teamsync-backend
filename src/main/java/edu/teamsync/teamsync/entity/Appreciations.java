@@ -34,6 +34,7 @@ public class Appreciations {
     @Column(nullable = false)
     private String message;
 
+    @Builder.Default
     @Column(nullable = false)
     private ZonedDateTime timestamp = ZonedDateTime.now();
 }

@@ -1,0 +1,26 @@
+meta {
+  name: update-user
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{BASE_SERVER}}/users/24
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{jwt}}
+}
+
+body:json {
+  {
+    "name": "hello",
+    "email": "hello@gmail.com",
+    "profile_picture": "",
+    "designation": "ML engineer",
+    "birthdate": "",
+    "join_date": "2025-02-31"
+  }
+}

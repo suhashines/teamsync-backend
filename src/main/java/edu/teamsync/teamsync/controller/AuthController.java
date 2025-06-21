@@ -1,137 +1,172 @@
 package edu.teamsync.teamsync.controller;
 
-import edu.teamsync.teamsync.config.JwtProvider;
-import edu.teamsync.teamsync.entity.Users;
-import edu.teamsync.teamsync.exception.UserException;
-import edu.teamsync.teamsync.repository.UserRepository;
-import edu.teamsync.teamsync.request.LoginRequest;
-import edu.teamsync.teamsync.response.AuthResponse;
-import edu.teamsync.teamsync.service.CustomerUserServiceImplementation;
+import edu.teamsync.teamsync.dto.authDTO.*;
+import edu.teamsync.teamsync.dto.userDTO.UserCreationDTO;
+import edu.teamsync.teamsync.dto.userDTO.UserResponseDTO;
+import edu.teamsync.teamsync.response.SuccessResponse;
+import edu.teamsync.teamsync.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
-
+@Slf4j
 @RestController
 @RequestMapping("/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
-    private UserRepository userRepository;
-
-    private JwtProvider jwtProvider;
-
-    private PasswordEncoder passwordEncoder;
-
-    private CustomerUserServiceImplementation customUserService;
-
-
-    public AuthController(
-            UserRepository userRepository,
-            JwtProvider jwtProvider,
-            PasswordEncoder passwordEncoder,
-            CustomerUserServiceImplementation customUserService
-    ) {
-        this.userRepository = userRepository;
-        this.jwtProvider = jwtProvider;
-        this.passwordEncoder = passwordEncoder;
-        this.customUserService = customUserService;
-    }
-
+    private final AuthService authService;
 
     @PostMapping(value = "/register", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AuthResponse> createUserHandler(@RequestBody Users user) throws UserException {
+    public ResponseEntity<SuccessResponse<UserResponseDTO>> registerUser(
+            @Valid @RequestBody UserCreationDTO userCreationDTO,
+            HttpServletRequest request) {
 
-        String email = user.getEmail();
-        String password = user.getPassword();
-//        String firstString = user.getFirstName();
-        String name = user.getName();
+        UserResponseDTO authResponse = authService.registerUser(userCreationDTO, request);
 
-        Users isEmailExist = userRepository.findByEmail(email);
+        SuccessResponse<UserResponseDTO> response = SuccessResponse.<UserResponseDTO>builder()
+                .code(HttpStatus.CREATED.value())
+                .status(HttpStatus.CREATED)
+                .message("User registered successfully")
+                .data(authResponse)
+                .build();
 
-        if (isEmailExist != null) {
-            throw new UserException("Email Is Already Used With Another Account");
-        }
-
-        Users createdUser = new Users();
-        createdUser.setEmail(email);
-        createdUser.setPassword(passwordEncoder.encode(password));
-        createdUser.setName(name);
-
-
-        Users savedUser = userRepository.save(createdUser);
-
-        Authentication authentication = new UsernamePasswordAuthenticationToken(savedUser.getEmail(), savedUser.getPassword());
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        String token = jwtProvider.generateToken(authentication);
-        AuthResponse authResponse = new AuthResponse(token, "Signup Success");
-        return new ResponseEntity<AuthResponse>(authResponse, HttpStatus.CREATED);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @PostMapping(value = "/login", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AuthResponse> loginUserHandler(@RequestBody LoginRequest loginRequest) {
-//        try {
-        String username = loginRequest.getEmail();
-        String password = loginRequest.getPassword();
+    public ResponseEntity<SuccessResponse<AuthResponseDTO>> loginUser(
+            @Valid @RequestBody LoginRequestDTO loginRequestDTO,
+            HttpServletRequest request) {
 
-        Authentication authentication = authenticate(username, password);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        AuthResponseDTO authResponse = authService.loginUser(loginRequestDTO, request);
 
-        String token = jwtProvider.generateToken(authentication);
-        AuthResponse authResponse = new AuthResponse(token, "Signin Success");
-//            return new ResponseEntity<>(new AuthResponse(token, "Login successful"), HttpStatus.OK);
-        return new ResponseEntity<AuthResponse>(authResponse, HttpStatus.OK);
-
-//        } catch (BadCredentialsException e) {
-//            return new ResponseEntity<>(new AuthResponse(null, "Invalid credentials"), HttpStatus.UNAUTHORIZED);
-//        }
-    }
-
-    @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal() == "anonymousUser") {
-            return new ResponseEntity<>(Map.of("message", "Unauthorized"), HttpStatus.UNAUTHORIZED);
-        }
-
-        String email = authentication.getName();
-        Users user = userRepository.findByEmail(email);
-
-        if (user == null) {
-            return new ResponseEntity<>(Map.of("message", "User not found"), HttpStatus.NOT_FOUND);
-        }
-
-        var response = new Object() {
-            public String name = user.getName();
-            public String profile_picture = user.getProfilePicture();
-            public String designation = user.getDesignation();
-        };
+        SuccessResponse<AuthResponseDTO> response = SuccessResponse.<AuthResponseDTO>builder()
+                .code(HttpStatus.OK.value())
+                .status(HttpStatus.OK)
+                .message("User logged in successfully")
+                .data(authResponse)
+                .build();
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    private Authentication authenticate(String username, String password) {
-        UserDetails userDetails = customUserService.loadUserByUsername(username);
+    @PostMapping(value = "/refresh", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<SuccessResponse<TokenRefreshResponseDTO>> refreshToken(
+            @Valid @RequestBody RefreshTokenRequestDTO refreshTokenRequest) {
 
-        if (userDetails == null) {
-            throw new BadCredentialsException("Invalid Username...");
+        TokenRefreshResponseDTO tokenResponse = authService.refreshToken(refreshTokenRequest.getRefreshToken());
+
+        SuccessResponse<TokenRefreshResponseDTO> response = SuccessResponse.<TokenRefreshResponseDTO>builder()
+                .code(HttpStatus.OK.value())
+                .status(HttpStatus.OK)
+                .message("Token refreshed successfully")
+                .data(tokenResponse)
+                .build();
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping(value = "/logout", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<SuccessResponse<Void>> logout(
+            @RequestBody RefreshTokenRequestDTO refreshTokenRequest,
+            HttpServletRequest request) {
+
+        String refreshToken = refreshTokenRequest.getRefreshToken();
+
+        // Extract JWT token from Authorization header
+        String jwtToken = request.getHeader("Authorization");
+        if (jwtToken != null && jwtToken.startsWith("Bearer ")) {
+            jwtToken = jwtToken.substring(7);
         }
 
-        if (!passwordEncoder.matches(password, userDetails.getPassword())) {
-            throw new BadCredentialsException("Invalid Password...");
-        }
+        // Call logout with both tokens
+        authService.logout(refreshToken, jwtToken);
 
-        return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        SuccessResponse<Void> response = SuccessResponse.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .status(HttpStatus.OK)
+                .message("User logged out successfully")
+                .data(null)
+                .build();
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<SuccessResponse<UserResponseDTO>> getCurrentUser() {
+
+        UserResponseDTO userResponse = authService.getCurrentUser();
+
+        SuccessResponse<UserResponseDTO> response = SuccessResponse.<UserResponseDTO>builder()
+                .code(HttpStatus.OK.value())
+                .status(HttpStatus.OK)
+                .message("Current user retrieved successfully")
+                .data(userResponse)
+                .build();
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @PostMapping(value = "/me", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<SuccessResponse<Void>> updateCurrentUser(@RequestBody UserUpdateRequestDTO requestDTO) {
+
+        authService.updateCurrentUser(requestDTO);
+
+        SuccessResponse<Void> response = SuccessResponse.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .status(HttpStatus.OK)
+                .message("Current User updated successfully")
+                .build();
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @PostMapping(value = "/password-change", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<SuccessResponse<String>> changePassword(@RequestBody PasswordChangeRequestDTO requestDTO) {
+
+        authService.changePassword(requestDTO);
+
+        SuccessResponse<String> response = SuccessResponse.<String>builder()
+                .code(HttpStatus.OK.value())
+                .status(HttpStatus.OK)
+                .message("Password changed successfully")
+                .build();
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @PostMapping(value = "/password-reset-request", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<SuccessResponse<Void>> requestPasswordReset(
+            @Valid @RequestBody PasswordResetRequestDTO request) {
+
+        authService.requestPasswordReset(request);
+
+        SuccessResponse<Void> response = SuccessResponse.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .status(HttpStatus.OK)
+                .message("If the email exists, a password reset link has been sent")
+                .data(null)
+                .build();
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping(value = "/password-reset", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<SuccessResponse<Void>> resetPassword(
+            @Valid @RequestBody PasswordResetDTO resetRequest) {
+
+        authService.resetPassword(resetRequest);
+
+        SuccessResponse<Void> response = SuccessResponse.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .status(HttpStatus.OK)
+                .message("Password reset successfully")
+                .data(null)
+                .build();
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
-
-

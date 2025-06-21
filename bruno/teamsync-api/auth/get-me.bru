@@ -1,0 +1,15 @@
+meta {
+  name: get-me
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{BASE_SERVER}}/auth/me
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{jwt}}
+}

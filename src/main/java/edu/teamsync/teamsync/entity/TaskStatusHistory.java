@@ -31,6 +31,7 @@ public class TaskStatusHistory {
     @JoinColumn(name = "changed_by", nullable = false)
     private Users changedBy;
 
+    @Builder.Default
     @Column(name = "changed_at", nullable = false)
     private ZonedDateTime changedAt = ZonedDateTime.now();
 
