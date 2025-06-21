@@ -30,6 +30,7 @@ public class ProjectMembers {
     @Column(nullable = false)
     private ProjectRole role;
 
+    @Builder.Default
     @Column(name = "joined_at", nullable = false)
     private ZonedDateTime joinedAt = ZonedDateTime.now();
 

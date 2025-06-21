@@ -37,6 +37,7 @@ public class FeedPosts {
     @Column(name = "poll_options", columnDefinition = "text[]")
     private String[] pollOptions;
 
+    @Builder.Default
     @Column(name = "created_at", nullable = false)
     private ZonedDateTime createdAt = ZonedDateTime.now();
 
@@ -47,6 +48,7 @@ public class FeedPosts {
     @Column(name = "media_urls", columnDefinition = "text[]")
     private String[] mediaUrls;
 
+    @Builder.Default
     @Column(name = "is_ai_generated", nullable = false)
     private boolean isAiGenerated = false;
 
