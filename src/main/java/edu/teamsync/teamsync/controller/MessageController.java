@@ -10,6 +10,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -67,7 +69,9 @@ public class MessageController {
             @PathVariable Long channelId,
             @PathVariable Long messageId,
             @Valid @RequestBody MessageUpdateDTO requestDto) {
-       messageService.updateChannelMessage(channelId, messageId, requestDto);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userEmail = authentication.getName();
+       messageService.updateChannelMessage(channelId, messageId, requestDto,userEmail);
         SuccessResponse<Void> resp = SuccessResponse.<Void>builder()
                 .code(HttpStatus.OK.value())
                 .status(HttpStatus.OK)

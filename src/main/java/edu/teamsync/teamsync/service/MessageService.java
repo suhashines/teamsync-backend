@@ -7,6 +7,7 @@ import edu.teamsync.teamsync.entity.Channels;
 import edu.teamsync.teamsync.entity.Messages;
 import edu.teamsync.teamsync.entity.Users;
 import edu.teamsync.teamsync.exception.http.NotFoundException;
+import edu.teamsync.teamsync.exception.http.UnauthorizedException;
 import edu.teamsync.teamsync.mapper.MessageMapper;
 import edu.teamsync.teamsync.repository.ChannelRepository;
 import edu.teamsync.teamsync.repository.MessageRepository;
@@ -101,7 +102,7 @@ public class MessageService {
     }
 
     @Transactional
-    public void updateChannelMessage(Long channelId, Long messageId, MessageUpdateDTO requestDto) {
+    public void updateChannelMessage(Long channelId, Long messageId, MessageUpdateDTO requestDto,String userEmail) {
         // Validate channel exists
         if (!channelRepository.existsById(channelId)) {
             throw new NotFoundException("Channel with ID " + channelId + " not found");
@@ -110,10 +111,6 @@ public class MessageService {
         // Validate message exists in the channel
         Messages existingMessage = messageRepository.findByIdAndChannelId(messageId, channelId)
                 .orElseThrow(() -> new NotFoundException("Message with ID " + messageId + " not found in channel " + channelId));
-
-        // Validate sender exists
-        Users sender = userRepository.findById(requestDto.senderId())
-                .orElseThrow(() -> new NotFoundException("Sender with ID " + requestDto.senderId() + " not found"));
 
         // Validate channel in request body matches path channel
         Channels channel = channelRepository.findById(channelId)
@@ -126,24 +123,22 @@ public class MessageService {
                     .orElseThrow(() -> new NotFoundException("Recipient with ID " + requestDto.recipientId() + " not found"));
         }
 
-        // Validate thread parent if provided
-        Messages threadParent = null;
-        if (requestDto.threadParentId() != null) {
-            threadParent = messageRepository.findById(requestDto.threadParentId())
-                    .orElseThrow(() -> new NotFoundException("Thread parent message with ID " + requestDto.threadParentId() + " not found"));
-        }
+//        // Validate thread parent if provided
+//        Messages threadParent = null;
+//        if (requestDto.threadParentId() != null) {
+//            threadParent = messageRepository.findById(requestDto.threadParentId())
+//                    .orElseThrow(() -> new NotFoundException("Thread parent message with ID " + requestDto.threadParentId() + " not found"));
+//        }
 
-        Messages message = messageMapper.toEntity(requestDto);
-        message.setSender(sender);
-        message.setChannel(channel);
-        message.setRecipient(recipient);
-        message.setThreadParent(threadParent);
+//        existingMessage.setSender(sender);
+        existingMessage.setChannel(channel);
+        existingMessage.setRecipient(recipient);
+        existingMessage.setContent(requestDto.content());
+//        message.setThreadParent(threadParent);
 
         // Save updated message
-         messageRepository.save(message);
+        messageRepository.save(existingMessage);
 
-        // Map entity to response DTO
-//        return messageMapper.toDto(savedMessage);
     }
 
     @Transactional
