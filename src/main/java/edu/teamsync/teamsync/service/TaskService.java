@@ -1,6 +1,4 @@
 package edu.teamsync.teamsync.service;
-
-import edu.teamsync.teamsync.dto.*;
 import edu.teamsync.teamsync.dto.taskDTO.TaskCreationDTO;
 import edu.teamsync.teamsync.dto.taskDTO.TaskResponseDTO;
 import edu.teamsync.teamsync.dto.taskDTO.TaskUpdateDTO;
@@ -87,23 +85,59 @@ public class TaskService {
             task.setAssignedBy(assignedUser);
         }
 
+        Tasks parentTask = null;
         // Set parent task if provided
         if (createDto.getParentTaskId() != null) {
-            Tasks parentTask = tasksRepository.findById(createDto.getParentTaskId())
+            parentTask = tasksRepository.findById(createDto.getParentTaskId())
                     .orElseThrow(() -> new NotFoundException("Parent task not found with id: " + createDto.getParentTaskId()));
 
             // Validate that parent task belongs to the same project
             if (!parentTask.getProject().getId().equals(createDto.getProjectId())) {
                 throw new IllegalArgumentException("Parent task must belong to the same project");
             }
-
             task.setParentTask(parentTask);
         }
 
         Tasks savedTask = tasksRepository.save(task);
+
+        // Update parent deadlines recursively if this task has a parent and a deadline
+        if (parentTask != null && savedTask.getDeadline() != null) {
+            updateParentDeadlinesRecursively(parentTask, savedTask.getDeadline());
+        }
+
         // Create initial status history entry
         createStatusHistoryEntry(savedTask, savedTask.getStatus(), "Task created");
-//        return buildTaskResponseDto(savedTask);
+    }
+
+    /**
+     * Recursively updates parent task deadlines based on the new child task deadline.
+     * Parent deadline = Max(current parent deadline, new child deadline)
+     *
+     * @param parentTask The parent task to update
+     * @param newChildDeadline The deadline of the new child task
+     */
+    private void updateParentDeadlinesRecursively(Tasks parentTask, ZonedDateTime newChildDeadline) {
+        if (parentTask == null || newChildDeadline == null) {
+            return;
+        }
+
+        boolean deadlineUpdated = false;
+
+        // Update parent deadline if new child deadline is later
+        if (parentTask.getDeadline() == null || newChildDeadline.isAfter(parentTask.getDeadline())) {
+            parentTask.setDeadline(newChildDeadline);
+            deadlineUpdated = true;
+        }
+
+        // Save the updated parent task if deadline was changed
+        if (deadlineUpdated) {
+            tasksRepository.save(parentTask);
+
+            // Recursively update the parent of this parent task
+            if (parentTask.getParentTask() != null) {
+                updateParentDeadlinesRecursively(parentTask.getParentTask(), newChildDeadline);
+            }
+        }
     }
 
     public void updateTask(Long id, TaskUpdateDTO updateDto) {
@@ -148,8 +182,6 @@ public class TaskService {
         if (statusChanged && newStatus != null) {
             createStatusHistoryEntry(savedTask, newStatus, "Status updated");
         }
-
-//            return buildTaskResponseDto(savedTask);
 
     }
     public void deleteTask(Long id) {
@@ -200,7 +232,7 @@ public class TaskService {
         {
             taskResponseDTOs.add(buildTaskResponseDto(task));
         }
-         return taskResponseDTOs;
+        return taskResponseDTOs;
     }
 
     private void handleRelationshipUpdates(TaskUpdateDTO updateDto, Tasks existingTask) {
