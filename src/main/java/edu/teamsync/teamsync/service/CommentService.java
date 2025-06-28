@@ -127,7 +127,7 @@ public class CommentService {
     }
 
 
-    private void updateCommentReactions(Comments comment, List<ReactionDetailDTO> reactionDTOs) {
+    public void updateCommentReactions(Comments comment, List<ReactionDetailDTO> reactionDTOs) {
         List<Reactions> existingReaction=commentReactionRepository.findByCommentId(comment.getId());
         if(!existingReaction.isEmpty())
         {
@@ -140,7 +140,7 @@ public class CommentService {
             Reactions reaction = Reactions.builder()
                     .comment(comment)
                     .user(user)
-                    .reactionType(Reactions.ReactionType.valueOf(reactionDTO.getReactionType().toUpperCase()))
+                    .reactionType(Reactions.ReactionType.valueOf(reactionDTO.getReactionType().toLowerCase()))
                     .createdAt(reactionDTO.getCreatedAt() != null ? reactionDTO.getCreatedAt() : ZonedDateTime.now())
                     .build();
 
