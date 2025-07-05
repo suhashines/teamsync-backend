@@ -5,6 +5,7 @@ import edu.teamsync.teamsync.exception.http.NotFoundException;
 import edu.teamsync.teamsync.response.SuccessResponse;
 import edu.teamsync.teamsync.service.ProjectService;
 import edu.teamsync.teamsync.service.TaskService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -50,7 +51,7 @@ public class ProjectController {
     }
 
     @PostMapping
-    public ResponseEntity<SuccessResponse<Void>> createProject(@RequestBody ProjectCreationDTO dto) {
+    public ResponseEntity<SuccessResponse<Void>> createProject(@Valid @RequestBody ProjectCreationDTO dto) {
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         projectService.createProject(dto, userEmail);
         SuccessResponse<Void> response = SuccessResponse.<Void>builder()
@@ -63,7 +64,7 @@ public class ProjectController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<SuccessResponse<Void>> updateProject(@PathVariable Long id, @RequestBody ProjectUpdateDTO dto) {
+    public ResponseEntity<SuccessResponse<Void>> updateProject(@PathVariable Long id, @Valid @RequestBody ProjectUpdateDTO dto) {
        projectService.updateProject(id, dto);
         SuccessResponse<Void> response = SuccessResponse.<Void>builder()
                 .code(HttpStatus.OK.value())
@@ -99,7 +100,7 @@ public class ProjectController {
 
     @PostMapping("/{id}/members")
     public ResponseEntity<SuccessResponse<Void>> addMemberToProject(
-            @PathVariable Long id, @RequestBody AddMemberDTO dto) {
+            @PathVariable Long id,@Valid @RequestBody AddMemberDTO dto) {
         projectService.addMemberToProject(id, dto);
         SuccessResponse<Void> response = SuccessResponse.<Void>builder()
                 .code(HttpStatus.CREATED.value())
@@ -114,7 +115,7 @@ public class ProjectController {
     public ResponseEntity<SuccessResponse<Void>> updateMemberRole(
             @PathVariable Long projectId,
             @PathVariable Long userId,
-            @RequestBody UpdateMemberRoleDTO dto) {
+            @Valid @RequestBody UpdateMemberRoleDTO dto) {
        projectService.updateMemberRole(projectId, userId, dto);
         SuccessResponse<Void> response = SuccessResponse.<Void>builder()
                 .code(HttpStatus.OK.value())
