@@ -7,6 +7,7 @@ import edu.teamsync.teamsync.dto.taskDTO.TaskUpdateDTO;
 import edu.teamsync.teamsync.exception.http.NotFoundException;
 import edu.teamsync.teamsync.response.SuccessResponse;
 import edu.teamsync.teamsync.service.TaskService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -65,7 +66,7 @@ public class TaskController {
     }
 
     @PostMapping
-    public ResponseEntity<SuccessResponse<Void>> createTask(@RequestBody TaskCreationDTO createDto) {
+    public ResponseEntity<SuccessResponse<Void>> createTask(@Valid @RequestBody TaskCreationDTO createDto) {
         tasksService.createTask(createDto);
 
         SuccessResponse<Void> response = SuccessResponse.<Void>builder()
@@ -79,7 +80,7 @@ public class TaskController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<SuccessResponse<Void>> updateTask(@PathVariable Long id, @RequestBody TaskUpdateDTO updateDto) {
+    public ResponseEntity<SuccessResponse<Void>> updateTask(@PathVariable Long id, @Valid @RequestBody TaskUpdateDTO updateDto) {
         tasksService.updateTask(id, updateDto);
 
         SuccessResponse<Void> response = SuccessResponse.<Void>builder()

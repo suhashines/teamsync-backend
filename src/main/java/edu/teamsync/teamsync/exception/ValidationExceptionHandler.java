@@ -9,6 +9,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -45,6 +46,25 @@ public class ValidationExceptionHandler {
                 .code("INVALID_REQUEST_PARAMETER")
                 .message(e.getMessage())
                 .errors(debug ? List.of(e.getMessage()) : null)
+                .build();
+    }
+
+    /**
+     * Handle missing request parameter.
+     * This method maps MissingServletRequestParameterException to HTTP status code 400
+     */
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ErrorMessage handleMissingServletRequestParameter(MissingServletRequestParameterException e) {
+        Map<String, String> details = new HashMap<>();
+        details.put("parameter", e.getParameterName());
+        details.put("type", e.getParameterType());
+
+        return ErrorMessage.builder()
+                .code("MISSING_REQUEST_PARAMETER")
+                .message("Required request parameter '" + e.getParameterName() + "' is missing")
+                .errors(debug ? List.of(e.getMessage()) : null)
+                .details(details)
                 .build();
     }
 
