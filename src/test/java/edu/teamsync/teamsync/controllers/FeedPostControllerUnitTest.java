@@ -12,16 +12,12 @@ import edu.teamsync.teamsync.service.FeedPostService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -35,6 +31,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -56,8 +53,6 @@ class FeedPostControllerUnitTest {
     private FeedPostWithReactionDTO feedPostWithReactions;
     private FeedPostCreateRequest createRequest;
     private FeedPostUpdateRequest updateRequest;
-    private Authentication mockAuthentication;
-    private SecurityContext mockSecurityContext;
 
     @BeforeEach
     void setup() {
@@ -123,13 +118,6 @@ class FeedPostControllerUnitTest {
         updateRequest.setIsAiGenerated(true);
         updateRequest.setAiSummary("Updated AI summary");
         updateRequest.setReactions(List.of(new ReactionDetailDTO()));
-
-        // Mock authentication
-        mockAuthentication = mock(Authentication.class);
-        when(mockAuthentication.getName()).thenReturn("user@example.com");
-
-        mockSecurityContext = mock(SecurityContext.class);
-        when(mockSecurityContext.getAuthentication()).thenReturn(mockAuthentication);
     }
 
     @Test
@@ -190,83 +178,72 @@ class FeedPostControllerUnitTest {
 
     @Test
     @DisplayName("Should create feed post successfully")
+    @WithMockUser(username = "user@example.com")
     void createFeedPost_ValidData_ReturnsCreatedResponse() throws Exception {
         doNothing().when(feedPostService).createFeedPost(any(FeedPostCreateRequest.class), anyString());
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(post("/feedposts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createRequest)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.code").value(HttpStatus.CREATED.value()))
+                .andExpect(jsonPath("$.status").value("CREATED"))
+                .andExpect(jsonPath("$.message").value("Feed post created successfully"))
+                .andExpect(jsonPath("$.data").doesNotExist());
 
-            mockMvc.perform(post("/feedposts")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(createRequest)))
-                    .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.code").value(HttpStatus.CREATED.value()))
-                    .andExpect(jsonPath("$.status").value("CREATED"))
-                    .andExpect(jsonPath("$.message").value("Feed post created successfully"))
-                    .andExpect(jsonPath("$.data").doesNotExist());
-
-            verify(feedPostService, times(1)).createFeedPost(any(FeedPostCreateRequest.class), eq("user@example.com"));
-        }
+        verify(feedPostService, times(1)).createFeedPost(any(FeedPostCreateRequest.class), eq("user@example.com"));
     }
 
     @Test
     @DisplayName("Should return bad request when creating feed post with invalid data")
+    @WithMockUser(username = "user@example.com")
     void createFeedPost_InvalidData_ReturnsBadRequest() throws Exception {
         FeedPostCreateRequest invalidRequest = new FeedPostCreateRequest();
         // Missing required fields (type and content)
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(post("/feedposts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest());
 
-            mockMvc.perform(post("/feedposts")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(invalidRequest)))
-                    .andExpect(status().isBadRequest());
-
-            verify(feedPostService, never()).createFeedPost(any(FeedPostCreateRequest.class), anyString());
-        }
+        verify(feedPostService, never()).createFeedPost(any(FeedPostCreateRequest.class), anyString());
     }
 
     @Test
     @DisplayName("Should return bad request when creating feed post with null type")
+    @WithMockUser(username = "user@example.com")
     void createFeedPost_NullType_ReturnsBadRequest() throws Exception {
         FeedPostCreateRequest invalidRequest = new FeedPostCreateRequest();
         invalidRequest.setType(null);
         invalidRequest.setContent("Valid content");
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(post("/feedposts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest());
 
-            mockMvc.perform(post("/feedposts")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(invalidRequest)))
-                    .andExpect(status().isBadRequest());
-
-            verify(feedPostService, never()).createFeedPost(any(FeedPostCreateRequest.class), anyString());
-        }
+        verify(feedPostService, never()).createFeedPost(any(FeedPostCreateRequest.class), anyString());
     }
 
     @Test
     @DisplayName("Should return bad request when creating feed post with blank content")
+    @WithMockUser(username = "user@example.com")
     void createFeedPost_BlankContent_ReturnsBadRequest() throws Exception {
         FeedPostCreateRequest invalidRequest = new FeedPostCreateRequest();
         invalidRequest.setType(FeedPosts.FeedPostType.text);
         invalidRequest.setContent("");
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(post("/feedposts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest());
 
-            mockMvc.perform(post("/feedposts")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(invalidRequest)))
-                    .andExpect(status().isBadRequest());
-
-            verify(feedPostService, never()).createFeedPost(any(FeedPostCreateRequest.class), anyString());
-        }
+        verify(feedPostService, never()).createFeedPost(any(FeedPostCreateRequest.class), anyString());
     }
 
     @Test
     @DisplayName("Should create feed post with minimal required fields")
+    @WithMockUser(username = "user@example.com")
     void createFeedPost_MinimalData_ReturnsCreatedResponse() throws Exception {
         FeedPostCreateRequest minimalRequest = new FeedPostCreateRequest();
         minimalRequest.setType(FeedPosts.FeedPostType.text);
@@ -274,19 +251,15 @@ class FeedPostControllerUnitTest {
 
         doNothing().when(feedPostService).createFeedPost(any(FeedPostCreateRequest.class), anyString());
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(post("/feedposts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(minimalRequest)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.code").value(HttpStatus.CREATED.value()))
+                .andExpect(jsonPath("$.status").value("CREATED"))
+                .andExpect(jsonPath("$.message").value("Feed post created successfully"));
 
-            mockMvc.perform(post("/feedposts")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(minimalRequest)))
-                    .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.code").value(HttpStatus.CREATED.value()))
-                    .andExpect(jsonPath("$.status").value("CREATED"))
-                    .andExpect(jsonPath("$.message").value("Feed post created successfully"));
-
-            verify(feedPostService, times(1)).createFeedPost(any(FeedPostCreateRequest.class), eq("user@example.com"));
-        }
+        verify(feedPostService, times(1)).createFeedPost(any(FeedPostCreateRequest.class), eq("user@example.com"));
     }
 
     @Test
@@ -435,6 +408,7 @@ class FeedPostControllerUnitTest {
 
     @Test
     @DisplayName("Should handle different feed post types correctly")
+    @WithMockUser(username = "user@example.com")
     void createFeedPost_DifferentTypes_ReturnsCreatedResponse() throws Exception {
         // Test EVENT type
         FeedPostCreateRequest eventRequest = new FeedPostCreateRequest();
@@ -444,23 +418,20 @@ class FeedPostControllerUnitTest {
 
         doNothing().when(feedPostService).createFeedPost(any(FeedPostCreateRequest.class), anyString());
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(post("/feedposts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(eventRequest)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.code").value(HttpStatus.CREATED.value()))
+                .andExpect(jsonPath("$.status").value("CREATED"))
+                .andExpect(jsonPath("$.message").value("Feed post created successfully"));
 
-            mockMvc.perform(post("/feedposts")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(eventRequest)))
-                    .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.code").value(HttpStatus.CREATED.value()))
-                    .andExpect(jsonPath("$.status").value("CREATED"))
-                    .andExpect(jsonPath("$.message").value("Feed post created successfully"));
-
-            verify(feedPostService, times(1)).createFeedPost(any(FeedPostCreateRequest.class), eq("user@example.com"));
-        }
+        verify(feedPostService, times(1)).createFeedPost(any(FeedPostCreateRequest.class), eq("user@example.com"));
     }
 
     @Test
     @DisplayName("Should handle poll type feed post creation")
+    @WithMockUser(username = "user@example.com")
     void createFeedPost_PollType_ReturnsCreatedResponse() throws Exception {
         FeedPostCreateRequest pollRequest = new FeedPostCreateRequest();
         pollRequest.setType(FeedPosts.FeedPostType.poll);
@@ -469,18 +440,14 @@ class FeedPostControllerUnitTest {
 
         doNothing().when(feedPostService).createFeedPost(any(FeedPostCreateRequest.class), anyString());
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(post("/feedposts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(pollRequest)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.code").value(HttpStatus.CREATED.value()))
+                .andExpect(jsonPath("$.status").value("CREATED"))
+                .andExpect(jsonPath("$.message").value("Feed post created successfully"));
 
-            mockMvc.perform(post("/feedposts")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(pollRequest)))
-                    .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.code").value(HttpStatus.CREATED.value()))
-                    .andExpect(jsonPath("$.status").value("CREATED"))
-                    .andExpect(jsonPath("$.message").value("Feed post created successfully"));
-
-            verify(feedPostService, times(1)).createFeedPost(any(FeedPostCreateRequest.class), eq("user@example.com"));
-        }
+        verify(feedPostService, times(1)).createFeedPost(any(FeedPostCreateRequest.class), eq("user@example.com"));
     }
 }

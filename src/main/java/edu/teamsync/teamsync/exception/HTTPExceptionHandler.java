@@ -53,4 +53,10 @@ public class HTTPExceptionHandler {
         logger.error("UNAUTHORIZED", e);
         return new ErrorMessageDto("Invalid authorization headers", "UNAUTHORIZED");
     }
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler(org.springframework.security.authorization.AuthorizationDeniedException.class)
+    public ErrorMessage handleAuthorizationDeniedException(org.springframework.security.authorization.AuthorizationDeniedException e) {
+        logger.error("AUTHORIZATION_DENIED", e);
+        return new ErrorMessage("Access Denied", "Only project admins or owners can perform this action");
+    }
 }

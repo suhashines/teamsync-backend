@@ -9,16 +9,12 @@ import edu.teamsync.teamsync.service.AppreciationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -50,8 +46,6 @@ class AppreciationControllerUnitTest {
     private AppreciationResponseDTO appreciation2;
     private AppreciationCreateDTO createDTO;
     private AppreciationUpdateDTO updateDTO;
-    private Authentication mockAuthentication;
-    private SecurityContext mockSecurityContext;
 
     @BeforeEach
     void setup() {
@@ -84,13 +78,6 @@ class AppreciationControllerUnitTest {
         updateDTO.setToUserId(20L);
         updateDTO.setMessage("Updated message");
         updateDTO.setTimestamp(ZonedDateTime.now());
-
-        // Mock authentication
-        mockAuthentication = mock(Authentication.class);
-        when(mockAuthentication.getName()).thenReturn("alice@example.com");
-
-        mockSecurityContext = mock(SecurityContext.class);
-        when(mockSecurityContext.getAuthentication()).thenReturn(mockAuthentication);
     }
 
     @Test
@@ -115,6 +102,7 @@ class AppreciationControllerUnitTest {
 
     @Test
     @DisplayName("Should return empty list when no appreciations exist")
+    @WithMockUser(username = "alice@example.com")
     void getAllAppreciations_EmptyList_ReturnsSuccessResponse() throws Exception {
         List<AppreciationResponseDTO> emptyList = List.of();
 
@@ -131,6 +119,7 @@ class AppreciationControllerUnitTest {
 
     @Test
     @DisplayName("Should return appreciation by ID with success response")
+    @WithMockUser(username = "alice@example.com")
     void getAppreciationById_ValidId_ReturnsSuccessResponse() throws Exception {
         when(appreciationService.getAppreciationById(1L)).thenReturn(appreciation1);
 
@@ -147,122 +136,105 @@ class AppreciationControllerUnitTest {
 
     @Test
     @DisplayName("Should create appreciation successfully")
+    @WithMockUser(username = "alice@example.com")
     void createAppreciation_ValidData_ReturnsCreatedResponse() throws Exception {
         doNothing().when(appreciationService).createAppreciation(any(AppreciationCreateDTO.class), anyString());
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(post("/appreciations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createDTO)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.code").value(HttpStatus.CREATED.value()))
+                .andExpect(jsonPath("$.status").value("CREATED"))
+                .andExpect(jsonPath("$.message").value("Appreciation created successfully"))
+                .andExpect(jsonPath("$.data").doesNotExist());
 
-            mockMvc.perform(post("/appreciations")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(createDTO)))
-                    .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.code").value(HttpStatus.CREATED.value()))
-                    .andExpect(jsonPath("$.status").value("CREATED"))
-                    .andExpect(jsonPath("$.message").value("Appreciation created successfully"))
-                    .andExpect(jsonPath("$.data").doesNotExist());
-
-            verify(appreciationService, times(1)).createAppreciation(any(AppreciationCreateDTO.class), eq("alice@example.com"));
-        }
+        verify(appreciationService, times(1)).createAppreciation(any(AppreciationCreateDTO.class), eq("alice@example.com"));
     }
 
     @Test
     @DisplayName("Should return bad request when creating appreciation with invalid data")
+    @WithMockUser(username = "alice@example.com")
     void createAppreciation_InvalidData_ReturnsBadRequest() throws Exception {
         AppreciationCreateDTO invalidDTO = new AppreciationCreateDTO();
         // Missing required fields
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(post("/appreciations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDTO)))
+                .andExpect(status().isBadRequest());
 
-            mockMvc.perform(post("/appreciations")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(invalidDTO)))
-                    .andExpect(status().isBadRequest());
-
-            verify(appreciationService, never()).createAppreciation(any(AppreciationCreateDTO.class), anyString());
-        }
+        verify(appreciationService, never()).createAppreciation(any(AppreciationCreateDTO.class), anyString());
     }
 
     @Test
     @DisplayName("Should return bad request when creating appreciation with null toUserId")
+    @WithMockUser(username = "alice@example.com")
     void createAppreciation_NullToUserId_ReturnsBadRequest() throws Exception {
         AppreciationCreateDTO invalidDTO = new AppreciationCreateDTO();
         invalidDTO.setToUserId(null);
         invalidDTO.setMessage("Great work!");
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(post("/appreciations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDTO)))
+                .andExpect(status().isBadRequest());
 
-            mockMvc.perform(post("/appreciations")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(invalidDTO)))
-                    .andExpect(status().isBadRequest());
-
-            verify(appreciationService, never()).createAppreciation(any(AppreciationCreateDTO.class), anyString());
-        }
+        verify(appreciationService, never()).createAppreciation(any(AppreciationCreateDTO.class), anyString());
     }
 
     @Test
     @DisplayName("Should return bad request when creating appreciation with blank message")
+    @WithMockUser(username = "alice@example.com")
     void createAppreciation_BlankMessage_ReturnsBadRequest() throws Exception {
         AppreciationCreateDTO invalidDTO = new AppreciationCreateDTO();
         invalidDTO.setToUserId(20L);
         invalidDTO.setMessage("");
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(post("/appreciations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDTO)))
+                .andExpect(status().isBadRequest());
 
-            mockMvc.perform(post("/appreciations")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(invalidDTO)))
-                    .andExpect(status().isBadRequest());
-
-            verify(appreciationService, never()).createAppreciation(any(AppreciationCreateDTO.class), anyString());
-        }
+        verify(appreciationService, never()).createAppreciation(any(AppreciationCreateDTO.class), anyString());
     }
 
     @Test
     @DisplayName("Should update appreciation successfully")
+    @WithMockUser(username = "alice@example.com")
     void updateAppreciation_ValidData_ReturnsSuccessResponse() throws Exception {
         doNothing().when(appreciationService).updateAppreciation(anyLong(), any(AppreciationUpdateDTO.class), anyString());
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(put("/appreciations/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(HttpStatus.OK.value()))
+                .andExpect(jsonPath("$.status").value("OK"))
+                .andExpect(jsonPath("$.message").value("Appreciation updated successfully"))
+                .andExpect(jsonPath("$.data").doesNotExist());
 
-            mockMvc.perform(put("/appreciations/1")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(updateDTO)))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(HttpStatus.OK.value()))
-                    .andExpect(jsonPath("$.status").value("OK"))
-                    .andExpect(jsonPath("$.message").value("Appreciation updated successfully"))
-                    .andExpect(jsonPath("$.data").doesNotExist());
-
-            verify(appreciationService, times(1)).updateAppreciation(eq(1L), any(AppreciationUpdateDTO.class), eq("alice@example.com"));
-        }
+        verify(appreciationService, times(1)).updateAppreciation(eq(1L), any(AppreciationUpdateDTO.class), eq("alice@example.com"));
     }
 
     @Test
     @DisplayName("Should return bad request when updating appreciation with invalid data")
+    @WithMockUser(username = "alice@example.com")
     void updateAppreciation_InvalidData_ReturnsBadRequest() throws Exception {
         AppreciationUpdateDTO invalidDTO = new AppreciationUpdateDTO();
         // Missing required fields
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(put("/appreciations/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDTO)))
+                .andExpect(status().isBadRequest());
 
-            mockMvc.perform(put("/appreciations/1")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(invalidDTO)))
-                    .andExpect(status().isBadRequest());
-
-            verify(appreciationService, never()).updateAppreciation(anyLong(), any(AppreciationUpdateDTO.class), anyString());
-        }
+        verify(appreciationService, never()).updateAppreciation(anyLong(), any(AppreciationUpdateDTO.class), anyString());
     }
 
     @Test
     @DisplayName("Should return bad request when updating appreciation with null fromUserId")
+    @WithMockUser(username = "alice@example.com")
     void updateAppreciation_NullFromUserId_ReturnsBadRequest() throws Exception {
         AppreciationUpdateDTO invalidDTO = new AppreciationUpdateDTO();
         invalidDTO.setFromUserId(null);
@@ -270,20 +242,17 @@ class AppreciationControllerUnitTest {
         invalidDTO.setMessage("Updated message");
         invalidDTO.setTimestamp(ZonedDateTime.now());
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(put("/appreciations/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDTO)))
+                .andExpect(status().isBadRequest());
 
-            mockMvc.perform(put("/appreciations/1")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(invalidDTO)))
-                    .andExpect(status().isBadRequest());
-
-            verify(appreciationService, never()).updateAppreciation(anyLong(), any(AppreciationUpdateDTO.class), anyString());
-        }
+        verify(appreciationService, never()).updateAppreciation(anyLong(), any(AppreciationUpdateDTO.class), anyString());
     }
 
     @Test
     @DisplayName("Should return bad request when updating appreciation with blank message")
+    @WithMockUser(username = "alice@example.com")
     void updateAppreciation_BlankMessage_ReturnsBadRequest() throws Exception {
         AppreciationUpdateDTO invalidDTO = new AppreciationUpdateDTO();
         invalidDTO.setFromUserId(10L);
@@ -301,6 +270,7 @@ class AppreciationControllerUnitTest {
 
     @Test
     @DisplayName("Should delete appreciation successfully")
+    @WithMockUser(username = "alice@example.com")
     void deleteAppreciation_ValidId_ReturnsSuccessResponse() throws Exception {
         doNothing().when(appreciationService).deleteAppreciation(anyLong());
 
@@ -316,6 +286,7 @@ class AppreciationControllerUnitTest {
 
     @Test
     @DisplayName("Should handle service exceptions gracefully")
+    @WithMockUser(username = "alice@example.com")
     void getAllAppreciations_ServiceException_ReturnsErrorResponse() throws Exception {
         when(appreciationService.getAllAppreciations()).thenThrow(new RuntimeException("Service error"));
 
@@ -325,6 +296,7 @@ class AppreciationControllerUnitTest {
 
     @Test
     @DisplayName("Should handle invalid path variable for getAppreciationById")
+    @WithMockUser(username = "alice@example.com")
     void getAppreciationById_InvalidPathVariable_ReturnsBadRequest() throws Exception {
         mockMvc.perform(get("/appreciations/invalid"))
                 .andExpect(status().isBadRequest());
@@ -332,6 +304,7 @@ class AppreciationControllerUnitTest {
 
     @Test
     @DisplayName("Should handle invalid path variable for updateAppreciation")
+    @WithMockUser(username = "alice@example.com")
     void updateAppreciation_InvalidPathVariable_ReturnsBadRequest() throws Exception {
         mockMvc.perform(put("/appreciations/invalid")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -341,6 +314,7 @@ class AppreciationControllerUnitTest {
 
     @Test
     @DisplayName("Should handle invalid path variable for deleteAppreciation")
+    @WithMockUser(username = "alice@example.com")
     void deleteAppreciation_InvalidPathVariable_ReturnsBadRequest() throws Exception {
         mockMvc.perform(delete("/appreciations/invalid"))
                 .andExpect(status().isBadRequest());
@@ -348,6 +322,7 @@ class AppreciationControllerUnitTest {
 
     @Test
     @DisplayName("Should handle missing request body for createAppreciation")
+    @WithMockUser(username = "alice@example.com")
     void createAppreciation_MissingRequestBody_ReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/appreciations")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -356,6 +331,7 @@ class AppreciationControllerUnitTest {
 
     @Test
     @DisplayName("Should handle missing request body for updateAppreciation")
+    @WithMockUser(username = "alice@example.com")
     void updateAppreciation_MissingRequestBody_ReturnsBadRequest() throws Exception {
         mockMvc.perform(put("/appreciations/1")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -364,6 +340,7 @@ class AppreciationControllerUnitTest {
 
     @Test
     @DisplayName("Should handle malformed JSON for createAppreciation")
+    @WithMockUser(username = "alice@example.com")
     void createAppreciation_MalformedJSON_ReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/appreciations")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -373,6 +350,7 @@ class AppreciationControllerUnitTest {
 
     @Test
     @DisplayName("Should handle malformed JSON for updateAppreciation")
+    @WithMockUser(username = "alice@example.com")
     void updateAppreciation_MalformedJSON_ReturnsBadRequest() throws Exception {
         mockMvc.perform(put("/appreciations/1")
                         .contentType(MediaType.APPLICATION_JSON)

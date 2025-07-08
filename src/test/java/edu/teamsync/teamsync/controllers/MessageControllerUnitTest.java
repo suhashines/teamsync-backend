@@ -1,3 +1,4 @@
+
 package edu.teamsync.teamsync.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,16 +10,12 @@ import edu.teamsync.teamsync.service.MessageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -30,6 +27,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -50,8 +48,6 @@ class MessageControllerUnitTest {
     private MessageResponseDTO message2;
     private MessageCreationDTO createDTO;
     private MessageUpdateDTO updateDTO;
-    private Authentication mockAuthentication;
-    private SecurityContext mockSecurityContext;
 
     @BeforeEach
     void setup() {
@@ -87,17 +83,11 @@ class MessageControllerUnitTest {
                 20L,
                 "Updated message content"
         );
-
-        // Mock authentication
-        mockAuthentication = mock(Authentication.class);
-        when(mockAuthentication.getName()).thenReturn("user@example.com");
-
-        mockSecurityContext = mock(SecurityContext.class);
-        when(mockSecurityContext.getAuthentication()).thenReturn(mockAuthentication);
     }
 
     @Test
     @DisplayName("Should return all channel messages with success response")
+    @WithMockUser(username = "user@example.com")
     void getChannelMessages_ValidChannelId_ReturnsSuccessResponse() throws Exception {
         List<MessageResponseDTO> messageList = List.of(message1, message2);
 
@@ -121,6 +111,7 @@ class MessageControllerUnitTest {
 
     @Test
     @DisplayName("Should return empty list when no messages exist in channel")
+    @WithMockUser(username = "user@example.com")
     void getChannelMessages_EmptyChannel_ReturnsSuccessResponse() throws Exception {
         List<MessageResponseDTO> emptyList = List.of();
 
@@ -138,6 +129,7 @@ class MessageControllerUnitTest {
 
     @Test
     @DisplayName("Should return specific message by ID with success response")
+    @WithMockUser(username = "user@example.com")
     void getChannelMessage_ValidIds_ReturnsSuccessResponse() throws Exception {
         when(messageService.getChannelMessage(100L, 1L)).thenReturn(message1);
 
@@ -157,10 +149,12 @@ class MessageControllerUnitTest {
 
     @Test
     @DisplayName("Should create message successfully")
+    @WithMockUser(username = "user@example.com")
     void createChannelMessage_ValidData_ReturnsCreatedResponse() throws Exception {
         doNothing().when(messageService).createChannelMessage(anyLong(), any(MessageCreationDTO.class));
 
         mockMvc.perform(post("/channels/100/messages")
+                        .with(user("user@example.com"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createDTO)))
                 .andExpect(status().isCreated())
@@ -174,6 +168,7 @@ class MessageControllerUnitTest {
 
     @Test
     @DisplayName("Should return bad request when creating message with invalid data")
+    @WithMockUser(username = "user@example.com")
     void createChannelMessage_InvalidData_ReturnsBadRequest() throws Exception {
         MessageCreationDTO invalidDTO = new MessageCreationDTO(
                 null, // blank content
@@ -183,6 +178,7 @@ class MessageControllerUnitTest {
         );
 
         mockMvc.perform(post("/channels/100/messages")
+                        .with(user("user@example.com"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidDTO)))
                 .andExpect(status().isBadRequest());
@@ -192,6 +188,7 @@ class MessageControllerUnitTest {
 
     @Test
     @DisplayName("Should return bad request when creating message with blank content")
+    @WithMockUser(username = "user@example.com")
     void createChannelMessage_BlankContent_ReturnsBadRequest() throws Exception {
         MessageCreationDTO invalidDTO = new MessageCreationDTO(
                 "", // blank content
@@ -201,6 +198,7 @@ class MessageControllerUnitTest {
         );
 
         mockMvc.perform(post("/channels/100/messages")
+                        .with(user("user@example.com"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidDTO)))
                 .andExpect(status().isBadRequest());
@@ -210,6 +208,7 @@ class MessageControllerUnitTest {
 
     @Test
     @DisplayName("Should return bad request when creating message with null channel ID")
+    @WithMockUser(username = "user@example.com")
     void createChannelMessage_NullChannelId_ReturnsBadRequest() throws Exception {
         MessageCreationDTO invalidDTO = new MessageCreationDTO(
                 "Valid content",
@@ -219,6 +218,7 @@ class MessageControllerUnitTest {
         );
 
         mockMvc.perform(post("/channels/100/messages")
+                        .with(user("user@example.com"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidDTO)))
                 .andExpect(status().isBadRequest());
@@ -228,6 +228,7 @@ class MessageControllerUnitTest {
 
     @Test
     @DisplayName("Should return bad request when creating message with null recipient ID")
+    @WithMockUser(username = "user@example.com")
     void createChannelMessage_NullRecipientId_ReturnsBadRequest() throws Exception {
         MessageCreationDTO invalidDTO = new MessageCreationDTO(
                 "Valid content",
@@ -237,6 +238,7 @@ class MessageControllerUnitTest {
         );
 
         mockMvc.perform(post("/channels/100/messages")
+                        .with(user("user@example.com"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidDTO)))
                 .andExpect(status().isBadRequest());
@@ -246,27 +248,26 @@ class MessageControllerUnitTest {
 
     @Test
     @DisplayName("Should update message successfully")
+    @WithMockUser(username = "user@example.com")
     void updateChannelMessage_ValidData_ReturnsSuccessResponse() throws Exception {
         doNothing().when(messageService).updateChannelMessage(anyLong(), anyLong(), any(MessageUpdateDTO.class), anyString());
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(put("/channels/100/messages/1")
+                        .with(user("user@example.com"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(HttpStatus.OK.value()))
+                .andExpect(jsonPath("$.status").value("OK"))
+                .andExpect(jsonPath("$.message").value("Message updated successfully"))
+                .andExpect(jsonPath("$.data").doesNotExist());
 
-            mockMvc.perform(put("/channels/100/messages/1")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(updateDTO)))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(HttpStatus.OK.value()))
-                    .andExpect(jsonPath("$.status").value("OK"))
-                    .andExpect(jsonPath("$.message").value("Message updated successfully"))
-                    .andExpect(jsonPath("$.data").doesNotExist());
-
-            verify(messageService, times(1)).updateChannelMessage(eq(100L), eq(1L), any(MessageUpdateDTO.class), eq("user@example.com"));
-        }
+        verify(messageService, times(1)).updateChannelMessage(eq(100L), eq(1L), any(MessageUpdateDTO.class), eq("user@example.com"));
     }
 
     @Test
     @DisplayName("Should return bad request when updating message with invalid data")
+    @WithMockUser(username = "user@example.com")
     void updateChannelMessage_InvalidData_ReturnsBadRequest() throws Exception {
         MessageUpdateDTO invalidDTO = new MessageUpdateDTO(
                 null, // null channel ID
@@ -274,20 +275,18 @@ class MessageControllerUnitTest {
                 "Updated content"
         );
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(put("/channels/100/messages/1")
+                        .with(user("user@example.com"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDTO)))
+                .andExpect(status().isBadRequest());
 
-            mockMvc.perform(put("/channels/100/messages/1")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(invalidDTO)))
-                    .andExpect(status().isBadRequest());
-
-            verify(messageService, never()).updateChannelMessage(anyLong(), anyLong(), any(MessageUpdateDTO.class), anyString());
-        }
+        verify(messageService, never()).updateChannelMessage(anyLong(), anyLong(), any(MessageUpdateDTO.class), anyString());
     }
 
     @Test
     @DisplayName("Should return bad request when updating message with blank content")
+    @WithMockUser(username = "user@example.com")
     void updateChannelMessage_BlankContent_ReturnsBadRequest() throws Exception {
         MessageUpdateDTO invalidDTO = new MessageUpdateDTO(
                 100L,
@@ -295,20 +294,18 @@ class MessageControllerUnitTest {
                 "" // blank content
         );
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(put("/channels/100/messages/1")
+                        .with(user("user@example.com"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDTO)))
+                .andExpect(status().isBadRequest());
 
-            mockMvc.perform(put("/channels/100/messages/1")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(invalidDTO)))
-                    .andExpect(status().isBadRequest());
-
-            verify(messageService, never()).updateChannelMessage(anyLong(), anyLong(), any(MessageUpdateDTO.class), anyString());
-        }
+        verify(messageService, never()).updateChannelMessage(anyLong(), anyLong(), any(MessageUpdateDTO.class), anyString());
     }
 
     @Test
     @DisplayName("Should return bad request when updating message with null recipient ID")
+    @WithMockUser(username = "user@example.com")
     void updateChannelMessage_NullRecipientId_ReturnsBadRequest() throws Exception {
         MessageUpdateDTO invalidDTO = new MessageUpdateDTO(
                 100L,
@@ -316,24 +313,23 @@ class MessageControllerUnitTest {
                 "Updated content"
         );
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(put("/channels/100/messages/1")
+                        .with(user("user@example.com"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDTO)))
+                .andExpect(status().isBadRequest());
 
-            mockMvc.perform(put("/channels/100/messages/1")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(invalidDTO)))
-                    .andExpect(status().isBadRequest());
-
-            verify(messageService, never()).updateChannelMessage(anyLong(), anyLong(), any(MessageUpdateDTO.class), anyString());
-        }
+        verify(messageService, never()).updateChannelMessage(anyLong(), anyLong(), any(MessageUpdateDTO.class), anyString());
     }
 
     @Test
     @DisplayName("Should delete message successfully")
+    @WithMockUser(username = "user@example.com")
     void deleteChannelMessage_ValidIds_ReturnsSuccessResponse() throws Exception {
         doNothing().when(messageService).deleteChannelMessage(anyLong(), anyLong());
 
-        mockMvc.perform(delete("/channels/100/messages/1"))
+        mockMvc.perform(delete("/channels/100/messages/1")
+                        .with(user("user@example.com")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(HttpStatus.NO_CONTENT.value()))
                 .andExpect(jsonPath("$.status").value("OK"))
@@ -345,6 +341,7 @@ class MessageControllerUnitTest {
 
     @Test
     @DisplayName("Should handle service exceptions gracefully")
+    @WithMockUser(username = "user@example.com")
     void getChannelMessages_ServiceException_ReturnsErrorResponse() throws Exception {
         when(messageService.getChannelMessages(100L)).thenThrow(new RuntimeException("Service error"));
 
@@ -354,6 +351,7 @@ class MessageControllerUnitTest {
 
     @Test
     @DisplayName("Should handle invalid path variable for channel ID")
+    @WithMockUser(username = "user@example.com")
     void getChannelMessages_InvalidChannelId_ReturnsBadRequest() throws Exception {
         mockMvc.perform(get("/channels/invalid/messages"))
                 .andExpect(status().isBadRequest());
@@ -361,6 +359,7 @@ class MessageControllerUnitTest {
 
     @Test
     @DisplayName("Should handle invalid path variable for message ID")
+    @WithMockUser(username = "user@example.com")
     void getChannelMessage_InvalidMessageId_ReturnsBadRequest() throws Exception {
         mockMvc.perform(get("/channels/100/messages/invalid"))
                 .andExpect(status().isBadRequest());
@@ -368,8 +367,10 @@ class MessageControllerUnitTest {
 
     @Test
     @DisplayName("Should handle invalid path variable for update message")
+    @WithMockUser(username = "user@example.com")
     void updateChannelMessage_InvalidPathVariable_ReturnsBadRequest() throws Exception {
         mockMvc.perform(put("/channels/invalid/messages/1")
+                        .with(user("user@example.com"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateDTO)))
                 .andExpect(status().isBadRequest());
@@ -377,31 +378,39 @@ class MessageControllerUnitTest {
 
     @Test
     @DisplayName("Should handle invalid path variable for delete message")
+    @WithMockUser(username = "user@example.com")
     void deleteChannelMessage_InvalidPathVariable_ReturnsBadRequest() throws Exception {
-        mockMvc.perform(delete("/channels/100/messages/invalid"))
+        mockMvc.perform(delete("/channels/100/messages/invalid")
+                        .with(user("user@example.com")))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     @DisplayName("Should handle missing request body for create message")
+    @WithMockUser(username = "user@example.com")
     void createChannelMessage_MissingRequestBody_ReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/channels/100/messages")
+                        .with(user("user@example.com"))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     @DisplayName("Should handle missing request body for update message")
+    @WithMockUser(username = "user@example.com")
     void updateChannelMessage_MissingRequestBody_ReturnsBadRequest() throws Exception {
         mockMvc.perform(put("/channels/100/messages/1")
+                        .with(user("user@example.com"))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     @DisplayName("Should handle malformed JSON for create message")
+    @WithMockUser(username = "user@example.com")
     void createChannelMessage_MalformedJSON_ReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/channels/100/messages")
+                        .with(user("user@example.com"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ invalid json }"))
                 .andExpect(status().isBadRequest());
@@ -409,8 +418,10 @@ class MessageControllerUnitTest {
 
     @Test
     @DisplayName("Should handle malformed JSON for update message")
+    @WithMockUser(username = "user@example.com")
     void updateChannelMessage_MalformedJSON_ReturnsBadRequest() throws Exception {
         mockMvc.perform(put("/channels/100/messages/1")
+                        .with(user("user@example.com"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ invalid json }"))
                 .andExpect(status().isBadRequest());
@@ -418,6 +429,7 @@ class MessageControllerUnitTest {
 
     @Test
     @DisplayName("Should handle create message with thread parent ID")
+    @WithMockUser(username = "user@example.com")
     void createChannelMessage_WithThreadParentId_ReturnsCreatedResponse() throws Exception {
         MessageCreationDTO threadDTO = new MessageCreationDTO(
                 "Reply to thread",
@@ -429,6 +441,7 @@ class MessageControllerUnitTest {
         doNothing().when(messageService).createChannelMessage(anyLong(), any(MessageCreationDTO.class));
 
         mockMvc.perform(post("/channels/100/messages")
+                        .with(user("user@example.com"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(threadDTO)))
                 .andExpect(status().isCreated())
@@ -441,6 +454,7 @@ class MessageControllerUnitTest {
 
     @Test
     @DisplayName("Should handle path variable boundary values")
+    @WithMockUser(username = "user@example.com")
     void getChannelMessages_BoundaryValues_ReturnsSuccessResponse() throws Exception {
         when(messageService.getChannelMessages(Long.MAX_VALUE)).thenReturn(List.of());
 
