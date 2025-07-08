@@ -7,7 +7,6 @@ import edu.teamsync.teamsync.entity.Channels;
 import edu.teamsync.teamsync.entity.Messages;
 import edu.teamsync.teamsync.entity.Users;
 import edu.teamsync.teamsync.exception.http.NotFoundException;
-import edu.teamsync.teamsync.exception.http.UnauthorizedException;
 import edu.teamsync.teamsync.mapper.MessageMapper;
 import edu.teamsync.teamsync.repository.ChannelRepository;
 import edu.teamsync.teamsync.repository.MessageRepository;

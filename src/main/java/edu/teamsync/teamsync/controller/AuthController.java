@@ -113,7 +113,7 @@ public class AuthController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
     @PostMapping(value = "/me", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<SuccessResponse<Void>> updateCurrentUser(@RequestBody UserUpdateRequestDTO requestDTO) {
+    public ResponseEntity<SuccessResponse<Void>> updateCurrentUser(@Valid @RequestBody UserUpdateRequestDTO requestDTO) {
 
         authService.updateCurrentUser(requestDTO);
 
@@ -126,7 +126,7 @@ public class AuthController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
     @PostMapping(value = "/password-change", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<SuccessResponse<String>> changePassword(@RequestBody PasswordChangeRequestDTO requestDTO) {
+    public ResponseEntity<SuccessResponse<String>> changePassword(@Valid @RequestBody PasswordChangeRequestDTO requestDTO) {
 
         authService.changePassword(requestDTO);
 

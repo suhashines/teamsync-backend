@@ -109,13 +109,6 @@ public class TaskService {
         createStatusHistoryEntry(savedTask, savedTask.getStatus(), "Task created");
     }
 
-    /**
-     * Recursively updates parent task deadlines based on the new child task deadline.
-     * Parent deadline = Max(current parent deadline, new child deadline)
-     *
-     * @param parentTask The parent task to update
-     * @param newChildDeadline The deadline of the new child task
-     */
     private void updateParentDeadlinesRecursively(Tasks parentTask, ZonedDateTime newChildDeadline) {
         if (parentTask == null || newChildDeadline == null) {
             return;
