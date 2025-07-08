@@ -9,16 +9,12 @@ import edu.teamsync.teamsync.service.PollVoteService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -28,7 +24,9 @@ import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -49,8 +47,6 @@ class PollVoteControllerUnitTest {
     private PollVoteResponseDTO pollVote2;
     private PollVoteCreationDTO createDTO;
     private PollVoteUpdateDTO updateDTO;
-    private Authentication mockAuthentication;
-    private SecurityContext mockSecurityContext;
 
     @BeforeEach
     void setup() {
@@ -76,13 +72,6 @@ class PollVoteControllerUnitTest {
         updateDTO.setPollId(100L);
         updateDTO.setUserId(10L);
         updateDTO.setSelectedOption("Option C");
-
-        // Mock authentication
-        mockAuthentication = mock(Authentication.class);
-        when(mockAuthentication.getName()).thenReturn("user@example.com");
-
-        mockSecurityContext = mock(SecurityContext.class);
-        when(mockSecurityContext.getAuthentication()).thenReturn(mockAuthentication);
     }
 
     @Test
@@ -139,25 +128,23 @@ class PollVoteControllerUnitTest {
                 .andExpect(jsonPath("$.data.selected_option").value("Option A"));
     }
 
+
     @Test
     @DisplayName("Should create poll vote successfully")
+    @WithMockUser(username = "user@example.com")
     void createPollVote_ValidData_ReturnsCreatedResponse() throws Exception {
         doNothing().when(pollVoteService).createPollVote(any(PollVoteCreationDTO.class), anyString());
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(post("/pollvotes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createDTO)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.code").value(HttpStatus.CREATED.value()))
+                .andExpect(jsonPath("$.status").value("CREATED"))
+                .andExpect(jsonPath("$.message").value("Poll vote created successfully"))
+                .andExpect(jsonPath("$.data").doesNotExist());
 
-            mockMvc.perform(post("/pollvotes")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(createDTO)))
-                    .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.code").value(HttpStatus.CREATED.value()))
-                    .andExpect(jsonPath("$.status").value("CREATED"))
-                    .andExpect(jsonPath("$.message").value("Poll vote created successfully"))
-                    .andExpect(jsonPath("$.data").doesNotExist());
-
-            verify(pollVoteService, times(1)).createPollVote(any(PollVoteCreationDTO.class), eq("user@example.com"));
-        }
+        verify(pollVoteService, times(1)).createPollVote(any(PollVoteCreationDTO.class), eq("user@example.com"));
     }
 
     @Test
@@ -166,16 +153,13 @@ class PollVoteControllerUnitTest {
         PollVoteCreationDTO invalidDTO = new PollVoteCreationDTO();
         // Missing required fields
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(post("/pollvotes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDTO))
+                        .with(user("user@example.com")))
+                .andExpect(status().isBadRequest());
 
-            mockMvc.perform(post("/pollvotes")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(invalidDTO)))
-                    .andExpect(status().isBadRequest());
-
-            verify(pollVoteService, never()).createPollVote(any(PollVoteCreationDTO.class), anyString());
-        }
+        verify(pollVoteService, never()).createPollVote(any(PollVoteCreationDTO.class), anyString());
     }
 
     @Test
@@ -185,16 +169,13 @@ class PollVoteControllerUnitTest {
         invalidDTO.setPollId(null);
         invalidDTO.setSelectedOption("Option A");
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(post("/pollvotes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDTO))
+                        .with(user("user@example.com")))
+                .andExpect(status().isBadRequest());
 
-            mockMvc.perform(post("/pollvotes")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(invalidDTO)))
-                    .andExpect(status().isBadRequest());
-
-            verify(pollVoteService, never()).createPollVote(any(PollVoteCreationDTO.class), anyString());
-        }
+        verify(pollVoteService, never()).createPollVote(any(PollVoteCreationDTO.class), anyString());
     }
 
     @Test
@@ -204,16 +185,13 @@ class PollVoteControllerUnitTest {
         invalidDTO.setPollId(100L);
         invalidDTO.setSelectedOption("");
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(post("/pollvotes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDTO))
+                        .with(user("user@example.com")))
+                .andExpect(status().isBadRequest());
 
-            mockMvc.perform(post("/pollvotes")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(invalidDTO)))
-                    .andExpect(status().isBadRequest());
-
-            verify(pollVoteService, never()).createPollVote(any(PollVoteCreationDTO.class), anyString());
-        }
+        verify(pollVoteService, never()).createPollVote(any(PollVoteCreationDTO.class), anyString());
     }
 
     @Test
@@ -223,16 +201,13 @@ class PollVoteControllerUnitTest {
         invalidDTO.setPollId(100L);
         invalidDTO.setSelectedOption(null);
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(post("/pollvotes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDTO))
+                        .with(user("user@example.com")))
+                .andExpect(status().isBadRequest());
 
-            mockMvc.perform(post("/pollvotes")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(invalidDTO)))
-                    .andExpect(status().isBadRequest());
-
-            verify(pollVoteService, never()).createPollVote(any(PollVoteCreationDTO.class), anyString());
-        }
+        verify(pollVoteService, never()).createPollVote(any(PollVoteCreationDTO.class), anyString());
     }
 
     @Test
@@ -381,7 +356,8 @@ class PollVoteControllerUnitTest {
     @DisplayName("Should handle missing request body for createPollVote")
     void createPollVote_MissingRequestBody_ReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/pollvotes")
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(user("user@example.com")))
                 .andExpect(status().isBadRequest());
     }
 
@@ -398,7 +374,8 @@ class PollVoteControllerUnitTest {
     void createPollVote_MalformedJSON_ReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/pollvotes")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{ invalid json }"))
+                        .content("{ invalid json }")
+                        .with(user("user@example.com")))
                 .andExpect(status().isBadRequest());
     }
 
@@ -425,14 +402,11 @@ class PollVoteControllerUnitTest {
     void createPollVote_ServiceException_ReturnsErrorResponse() throws Exception {
         doThrow(new RuntimeException("Creation failed")).when(pollVoteService).createPollVote(any(PollVoteCreationDTO.class), anyString());
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
-
-            mockMvc.perform(post("/pollvotes")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(createDTO)))
-                    .andExpect(status().isInternalServerError());
-        }
+        mockMvc.perform(post("/pollvotes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createDTO))
+                        .with(user("user@example.com")))
+                .andExpect(status().isInternalServerError());
     }
 
     @Test
@@ -453,5 +427,55 @@ class PollVoteControllerUnitTest {
 
         mockMvc.perform(delete("/pollvotes/1"))
                 .andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    @DisplayName("Should handle zero and negative IDs gracefully")
+    void testEdgeCaseIds() throws Exception {
+        // Test with zero ID
+        mockMvc.perform(get("/pollvotes/0"))
+                .andExpect(status().isOk());
+
+        // Test with negative ID - this might return 404 or 400 depending on your implementation
+        mockMvc.perform(get("/pollvotes/-1"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Should handle very large ID values")
+    void testLargeIds() throws Exception {
+        Long largeId = Long.MAX_VALUE;
+
+        mockMvc.perform(get("/pollvotes/" + largeId))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Should handle special characters in URL path")
+    void testSpecialCharactersInPath() throws Exception {
+        mockMvc.perform(get("/pollvotes/abc123"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Should handle concurrent requests simulation")
+    void testConcurrentRequestsSimulation() throws Exception {
+        // Simulate multiple rapid requests
+        for (int i = 0; i < 5; i++) {
+            mockMvc.perform(get("/pollvotes"))
+                    .andExpect(status().isOk());
+        }
+    }
+
+    @Test
+    @DisplayName("Should handle null JSON values properly")
+    void testNullJsonValues() throws Exception {
+        String jsonWithNulls = "{\"pollId\":null,\"selectedOption\":null}";
+
+        mockMvc.perform(post("/pollvotes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonWithNulls)
+                        .with(user("user@example.com")))
+                .andExpect(status().isBadRequest());
     }
 }

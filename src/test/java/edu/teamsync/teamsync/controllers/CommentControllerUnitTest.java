@@ -13,16 +13,12 @@ import edu.teamsync.teamsync.service.CommentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -32,11 +28,12 @@ import java.util.List;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(CommentController.class)
-@AutoConfigureMockMvc(addFilters = false)
+@AutoConfigureMockMvc
 class CommentControllerUnitTest {
 
     @Autowired
@@ -56,8 +53,6 @@ class CommentControllerUnitTest {
     private ReplyCreateRequestDTO replyCreateDTO;
     private ReactionCreateRequestDTO reactionCreateDTO;
     private ReactionResponseDTO reactionResponse;
-    private Authentication mockAuthentication;
-    private SecurityContext mockSecurityContext;
 
     @BeforeEach
     void setup() {
@@ -120,16 +115,10 @@ class CommentControllerUnitTest {
         reactionResponse.setUserId(40L);
         reactionResponse.setReactionType("LIKE");
         reactionResponse.setCreatedAt(ZonedDateTime.now());
-
-        // Mock authentication
-        mockAuthentication = mock(Authentication.class);
-        when(mockAuthentication.getName()).thenReturn("test@example.com");
-
-        mockSecurityContext = mock(SecurityContext.class);
-        when(mockSecurityContext.getAuthentication()).thenReturn(mockAuthentication);
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should return all comments for a post with success response")
     void getAllComments_ReturnsSuccessResponse() throws Exception {
         List<CommentResponseDTO> comments = List.of(comment1, comment2);
@@ -149,6 +138,7 @@ class CommentControllerUnitTest {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should return empty list when no comments exist")
     void getAllComments_EmptyList_ReturnsSuccessResponse() throws Exception {
         List<CommentResponseDTO> emptyList = List.of();
@@ -164,6 +154,7 @@ class CommentControllerUnitTest {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should return comment by ID with success response")
     void getComment_ValidId_ReturnsSuccessResponse() throws Exception {
         when(commentService.getCommentById(100L, 1L)).thenReturn(comment1);
@@ -180,88 +171,82 @@ class CommentControllerUnitTest {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should create comment successfully")
     void createComment_ValidData_ReturnsCreatedResponse() throws Exception {
         doNothing().when(commentService).createComment(eq(100L), any(CommentCreateRequestDTO.class), anyString());
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(post("/feedposts/100/comments")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createDTO)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.code").value(HttpStatus.CREATED.value()))
+                .andExpect(jsonPath("$.status").value("CREATED"))
+                .andExpect(jsonPath("$.message").value("Comment created successfully"))
+                .andExpect(jsonPath("$.data").doesNotExist());
 
-            mockMvc.perform(post("/feedposts/100/comments")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(createDTO)))
-                    .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.code").value(HttpStatus.CREATED.value()))
-                    .andExpect(jsonPath("$.status").value("CREATED"))
-                    .andExpect(jsonPath("$.message").value("Comment created successfully"))
-                    .andExpect(jsonPath("$.data").doesNotExist());
-
-            verify(commentService, times(1)).createComment(eq(100L), any(CommentCreateRequestDTO.class), eq("test@example.com"));
-        }
+        verify(commentService, times(1)).createComment(eq(100L), any(CommentCreateRequestDTO.class), eq("test@example.com"));
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should return bad request when creating comment with invalid data")
     void createComment_InvalidData_ReturnsBadRequest() throws Exception {
         CommentCreateRequestDTO invalidDTO = new CommentCreateRequestDTO();
         // Missing required fields
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(post("/feedposts/100/comments")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDTO)))
+                .andExpect(status().isBadRequest());
 
-            mockMvc.perform(post("/feedposts/100/comments")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(invalidDTO)))
-                    .andExpect(status().isBadRequest());
-
-            verify(commentService, never()).createComment(anyLong(), any(CommentCreateRequestDTO.class), anyString());
-        }
+        verify(commentService, never()).createComment(anyLong(), any(CommentCreateRequestDTO.class), anyString());
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should return bad request when creating comment with null postId")
     void createComment_NullPostId_ReturnsBadRequest() throws Exception {
         CommentCreateRequestDTO invalidDTO = new CommentCreateRequestDTO();
         invalidDTO.setPostId(null);
         invalidDTO.setContent("This is a comment");
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(post("/feedposts/100/comments")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDTO)))
+                .andExpect(status().isBadRequest());
 
-            mockMvc.perform(post("/feedposts/100/comments")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(invalidDTO)))
-                    .andExpect(status().isBadRequest());
-
-            verify(commentService, never()).createComment(anyLong(), any(CommentCreateRequestDTO.class), anyString());
-        }
+        verify(commentService, never()).createComment(anyLong(), any(CommentCreateRequestDTO.class), anyString());
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should return bad request when creating comment with blank content")
     void createComment_BlankContent_ReturnsBadRequest() throws Exception {
         CommentCreateRequestDTO invalidDTO = new CommentCreateRequestDTO();
         invalidDTO.setPostId(100L);
         invalidDTO.setContent("");
 
-        try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
-            mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(mockSecurityContext);
+        mockMvc.perform(post("/feedposts/100/comments")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDTO)))
+                .andExpect(status().isBadRequest());
 
-            mockMvc.perform(post("/feedposts/100/comments")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(invalidDTO)))
-                    .andExpect(status().isBadRequest());
-
-            verify(commentService, never()).createComment(anyLong(), any(CommentCreateRequestDTO.class), anyString());
-        }
+        verify(commentService, never()).createComment(anyLong(), any(CommentCreateRequestDTO.class), anyString());
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should update comment successfully")
     void updateComment_ValidData_ReturnsSuccessResponse() throws Exception {
         doNothing().when(commentService).updateComment(eq(100L), eq(1L), any(CommentUpdateRequestDTO.class));
 
         mockMvc.perform(put("/feedposts/100/comments/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateDTO)))
                 .andExpect(status().isOk())
@@ -274,12 +259,14 @@ class CommentControllerUnitTest {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should return bad request when updating comment with invalid data")
     void updateComment_InvalidData_ReturnsBadRequest() throws Exception {
         CommentUpdateRequestDTO invalidDTO = new CommentUpdateRequestDTO();
         // Missing required fields
 
         mockMvc.perform(put("/feedposts/100/comments/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidDTO)))
                 .andExpect(status().isBadRequest());
@@ -288,11 +275,13 @@ class CommentControllerUnitTest {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should delete comment successfully")
     void deleteComment_ValidId_ReturnsSuccessResponse() throws Exception {
         doNothing().when(commentService).deleteComment(100L, 1L);
 
-        mockMvc.perform(delete("/feedposts/100/comments/1"))
+        mockMvc.perform(delete("/feedposts/100/comments/1")
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(HttpStatus.NO_CONTENT.value()))
                 .andExpect(jsonPath("$.status").value("OK"))
@@ -303,6 +292,7 @@ class CommentControllerUnitTest {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should return all comment reactions with success response")
     void getAllCommentReactions_ReturnsSuccessResponse() throws Exception {
         List<ReactionResponseDTO> reactions = List.of(reactionResponse);
@@ -320,11 +310,13 @@ class CommentControllerUnitTest {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should add reaction to comment successfully")
     void addCommentReaction_ValidData_ReturnsCreatedResponse() throws Exception {
         doNothing().when(commentService).addReactionToComment(eq(100L), eq(1L), any(ReactionCreateRequestDTO.class));
 
         mockMvc.perform(post("/feedposts/100/comments/1/reactions")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(reactionCreateDTO)))
                 .andExpect(status().isCreated())
@@ -337,11 +329,13 @@ class CommentControllerUnitTest {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should remove reaction from comment successfully")
     void removeCommentReaction_ValidData_ReturnsSuccessResponse() throws Exception {
         doNothing().when(commentService).removeReactionFromComment(100L, 1L, 40L, "LIKE");
 
         mockMvc.perform(delete("/feedposts/100/comments/1/reactions")
+                        .with(csrf())
                         .param("user_id", "40")
                         .param("reaction_type", "LIKE"))
                 .andExpect(status().isOk())
@@ -354,6 +348,7 @@ class CommentControllerUnitTest {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should return all replies with success response")
     void getAllReplies_ReturnsSuccessResponse() throws Exception {
         List<CommentResponseDTO> replies = List.of(reply1);
@@ -372,11 +367,13 @@ class CommentControllerUnitTest {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should add reply to comment successfully")
     void addReplyToComment_ValidData_ReturnsCreatedResponse() throws Exception {
         doNothing().when(commentService).addReplyToComment(eq(100L), eq(1L), any(ReplyCreateRequestDTO.class));
 
         mockMvc.perform(post("/feedposts/100/comments/1/replies")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(replyCreateDTO)))
                 .andExpect(status().isCreated())
@@ -389,12 +386,14 @@ class CommentControllerUnitTest {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should return bad request when adding reply with invalid data")
     void addReplyToComment_InvalidData_ReturnsBadRequest() throws Exception {
         ReplyCreateRequestDTO invalidDTO = new ReplyCreateRequestDTO();
         // Missing required fields
 
         mockMvc.perform(post("/feedposts/100/comments/1/replies")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidDTO)))
                 .andExpect(status().isBadRequest());
@@ -403,6 +402,7 @@ class CommentControllerUnitTest {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should return bad request when adding reply with blank content")
     void addReplyToComment_BlankContent_ReturnsBadRequest() throws Exception {
         ReplyCreateRequestDTO invalidDTO = new ReplyCreateRequestDTO();
@@ -410,6 +410,7 @@ class CommentControllerUnitTest {
         invalidDTO.setAuthor_id(30L);
 
         mockMvc.perform(post("/feedposts/100/comments/1/replies")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidDTO)))
                 .andExpect(status().isBadRequest());
@@ -418,6 +419,7 @@ class CommentControllerUnitTest {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should return bad request when adding reply with null author_id")
     void addReplyToComment_NullAuthorId_ReturnsBadRequest() throws Exception {
         ReplyCreateRequestDTO invalidDTO = new ReplyCreateRequestDTO();
@@ -425,6 +427,7 @@ class CommentControllerUnitTest {
         invalidDTO.setAuthor_id(null);
 
         mockMvc.perform(post("/feedposts/100/comments/1/replies")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidDTO)))
                 .andExpect(status().isBadRequest());
@@ -433,6 +436,7 @@ class CommentControllerUnitTest {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should handle service exceptions gracefully")
     void getAllComments_ServiceException_ReturnsErrorResponse() throws Exception {
         when(commentService.getAllCommentsByPostId(100L)).thenThrow(new RuntimeException("Service error"));
@@ -442,6 +446,7 @@ class CommentControllerUnitTest {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should handle invalid path variable for getComment")
     void getComment_InvalidPathVariable_ReturnsBadRequest() throws Exception {
         mockMvc.perform(get("/feedposts/100/comments/invalid"))
@@ -449,58 +454,73 @@ class CommentControllerUnitTest {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should handle invalid path variable for updateComment")
     void updateComment_InvalidPathVariable_ReturnsBadRequest() throws Exception {
         mockMvc.perform(put("/feedposts/100/comments/invalid")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateDTO)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should handle invalid path variable for deleteComment")
     void deleteComment_InvalidPathVariable_ReturnsBadRequest() throws Exception {
-        mockMvc.perform(delete("/feedposts/100/comments/invalid"))
+        mockMvc.perform(delete("/feedposts/100/comments/invalid")
+                        .with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should handle missing request body for createComment")
     void createComment_MissingRequestBody_ReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/feedposts/100/comments")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should handle missing request body for updateComment")
     void updateComment_MissingRequestBody_ReturnsBadRequest() throws Exception {
         mockMvc.perform(put("/feedposts/100/comments/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should handle malformed JSON for createComment")
     void createComment_MalformedJSON_ReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/feedposts/100/comments")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ invalid json }"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should handle malformed JSON for updateComment")
     void updateComment_MalformedJSON_ReturnsBadRequest() throws Exception {
         mockMvc.perform(put("/feedposts/100/comments/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ invalid json }"))
                 .andExpect(status().isBadRequest());
     }
+
     @Test
+    @WithMockUser(username = "test@example.com")
     @DisplayName("Should handle invalid user_id parameter for removeCommentReaction")
     void removeCommentReaction_InvalidUserId_ReturnsBadRequest() throws Exception {
         mockMvc.perform(delete("/feedposts/100/comments/1/reactions")
+                        .with(csrf())
                         .param("user_id", "invalid")
                         .param("reaction_type", "LIKE"))
                 .andExpect(status().isBadRequest());
