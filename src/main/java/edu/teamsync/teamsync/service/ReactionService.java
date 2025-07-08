@@ -94,4 +94,33 @@ public class ReactionService {
 
         reactionRepository.delete(targetReaction);
     }
+    public void updateReaction(Long postId, ReactionCreateRequestDTO request) {
+        FeedPosts post = feedPostRepository.findById(postId)
+                .orElseThrow(() -> new NotFoundException("FeedPost not found with id: " + postId));
+        Users user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + request.getUserId()));
+
+        Reactions.ReactionType reactionType;
+        try {
+            reactionType = Reactions.ReactionType.valueOf(request.getReactionType());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid reaction type: " + request.getReactionType());
+        }
+
+        // Find existing reactions for this user on this post
+        List<Reactions> existingReactions = reactionRepository.findByUserIdAndPostId(request.getUserId(), postId);
+
+        // Remove all existing reactions for this user on this post
+        reactionRepository.deleteAll(existingReactions);
+
+        // Add the new reaction
+        Reactions reaction = Reactions.builder()
+                .user(user)
+                .post(post)
+                .reactionType(reactionType)
+                .createdAt(ZonedDateTime.now())
+                .build();
+
+        reactionRepository.save(reaction);
+    }
 }

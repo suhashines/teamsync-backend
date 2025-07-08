@@ -102,4 +102,16 @@ public class ReactionController {
                 .build();
         return ResponseEntity.status(HttpStatus.OK).body(resp);
     }
+    @PutMapping
+    public ResponseEntity<SuccessResponse<Void>> updateReaction(
+            @PathVariable Long id,
+            @Valid @RequestBody ReactionCreateRequestDTO request) {
+        reactionService.updateReaction(id, request);
+        SuccessResponse<Void> resp = SuccessResponse.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .status(HttpStatus.OK)
+                .message("Reaction updated successfully")
+                .build();
+        return ResponseEntity.ok(resp);
+    }
 }
