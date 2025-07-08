@@ -1,5 +1,10 @@
 ## TeamSync - one stop solution for tech companies
 
+[![Java CI with Maven, Docker Compose, and Flyway](https://github.com/{owner}/{repo}/actions/workflows/ci.yml/badge.svg)](https://github.com/{owner}/{repo}/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-1037%20passing-brightgreen)](https://github.com/{owner}/{repo}/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-JaCoCo%20Report-blue)](https://github.com/{owner}/{repo}/actions/workflows/ci.yml)
+
+
 
 * clone the project
 
@@ -138,5 +143,30 @@ The JaCoCo report provides:
 Test results are also available in:
 - `target/surefire-reports/` - Detailed test execution reports
 - Console output - Summary of test execution
+
+## Continuous Integration (CI/CD)
+
+This project uses GitHub Actions for continuous integration. The CI pipeline:
+
+### What Runs on Every Push:
+1. **Database Setup**: Starts PostgreSQL and runs Flyway migrations
+2. **Test Execution**: Runs all 1,037 unit tests with JaCoCo coverage
+3. **Coverage Report**: Generates detailed HTML coverage reports
+4. **Build Verification**: Ensures the application builds successfully
+5. **Artifact Upload**: Stores test results and coverage reports as artifacts
+
+### CI Artifacts:
+- **JaCoCo Coverage Report**: HTML coverage report available for download
+- **Test Results**: Detailed test execution reports
+- **Build Artifacts**: Compiled application JAR files
+
+### Viewing Results:
+- **CI Status**: Check the badges above for current build status
+- **Coverage Report**: Download the `jacoco-coverage-report` artifact from GitHub Actions
+- **Test Results**: Download the `test-results` artifact for detailed test information
+
+### Local vs CI:
+- **Local**: Run `./mvnw clean test jacoco:report` for local testing
+- **CI**: Automatically runs on every push to master and pull requests
 
 
