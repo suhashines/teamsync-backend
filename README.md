@@ -79,4 +79,64 @@ You should see
 I am healthy
 ```
 
+## Testing and Code Coverage
+
+### Running Unit Tests
+
+To run all unit tests:
+
+```bash
+./mvnw clean test
+```
+
+This command will:
+- Clean the previous build artifacts
+- Compile the source code
+- Run all unit tests
+- Generate JaCoCo coverage data
+
+### Generating JaCoCo Coverage Report
+
+To generate a detailed HTML coverage report:
+
+```bash
+./mvnw jacoco:report
+```
+
+This will create an HTML report at: `target/site/jacoco/index.html`
+
+### Running Tests and Generating Coverage Report in One Command
+
+To run tests and generate the coverage report in a single command:
+
+```bash
+./mvnw clean test jacoco:report
+```
+
+### Viewing Coverage Reports
+
+After running the tests and generating the report, you can:
+
+1. **Open the HTML report**: Navigate to `target/site/jacoco/index.html` in your browser
+2. **View coverage metrics**: The report shows:
+   - **Instructions**: Bytecode instructions covered by tests
+   - **Branches**: Decision points (if/else, switch) covered by tests
+   - **Lines**: Source code lines covered by tests
+   - **Methods**: Methods called by tests
+   - **Classes**: Classes touched by tests
+
+### Coverage Report Structure
+
+The JaCoCo report provides:
+- **Package-level coverage**: Overall coverage for each package
+- **Class-level coverage**: Detailed coverage for each class
+- **Method-level coverage**: Line-by-line coverage within methods
+- **Color-coded coverage**: Green (covered), red (not covered), yellow (partially covered)
+
+### Test Results
+
+Test results are also available in:
+- `target/surefire-reports/` - Detailed test execution reports
+- Console output - Summary of test execution
+
 
