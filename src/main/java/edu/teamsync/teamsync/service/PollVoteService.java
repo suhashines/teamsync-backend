@@ -4,6 +4,7 @@ package edu.teamsync.teamsync.service;
 import edu.teamsync.teamsync.dto.pollVoteDTO.PollVoteCreationDTO;
 import edu.teamsync.teamsync.dto.pollVoteDTO.PollVoteResponseDTO;
 import edu.teamsync.teamsync.dto.pollVoteDTO.PollVoteUpdateDTO;
+import edu.teamsync.teamsync.dto.pollVoteDTO.VoterResponseDto;
 import edu.teamsync.teamsync.entity.FeedPosts;
 import edu.teamsync.teamsync.entity.PollVotes;
 import edu.teamsync.teamsync.entity.Users;
@@ -12,13 +13,15 @@ import edu.teamsync.teamsync.mapper.PollVoteMapper;
 import edu.teamsync.teamsync.repository.FeedPostRepository;
 import edu.teamsync.teamsync.repository.PollVoteRepository;
 import edu.teamsync.teamsync.repository.UserRepository;
+import edu.teamsync.teamsync.response.SuccessResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -33,6 +36,42 @@ public class PollVoteService {
     private UserRepository usersRepository;
     @Autowired
     private PollVoteMapper pollVotesMapper;
+
+    public SuccessResponse<Object> getVotersById(Long poll_id){
+
+        List<PollVotes> votes = pollVotesRepository.findByPoll_Id(poll_id);
+
+        /* 
+        [
+        
+        { id:1 , poll: {
+         }, user: {}, selectedOption }
+         ,
+        ]
+        
+        */ 
+
+        // Map<String, List<PollVotes> voterMap ;
+
+        // List<PollVotes> = List<User>
+
+       Map<String,List<PollVotes>> map = votes.stream().collect(Collectors.groupingBy(pv->pv.getSelectedOption()));
+
+       /* classic , { POll} */
+        // for(key: voterMap): 
+
+        List<VoterResponseDto> dtos = new ArrayList<>();
+
+        for(Map.Entry<String,List<PollVotes>> entry: map.entrySet()){
+            String option = entry.getKey();
+            List<Long> userIds = entry.getValue().stream().map(pv->pv.getUser().getId()).collect(Collectors.toList());
+            VoterResponseDto dto = VoterResponseDto.builder().userId(userIds).selectedOptions(option).count(userIds.size()).build();
+            dtos.add(dto);
+        }
+
+        return SuccessResponse.builder().data(dtos).code(HttpStatus.OK.value()).build();
+
+    }
 
     public List<PollVoteResponseDTO> getAllPollVotes() {
         return pollVotesRepository.findAll().stream()

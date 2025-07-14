@@ -198,7 +198,9 @@ public class ProjectController {
 
     @GetMapping
     public ResponseEntity<SuccessResponse<List<ProjectDTO>>> getAllProjects() {
+
         List<ProjectDTO> projects = projectService.getAllProjects();
+
         SuccessResponse<List<ProjectDTO>> response = SuccessResponse.<List<ProjectDTO>>builder()
                 .code(HttpStatus.OK.value())
                 .status(HttpStatus.OK)
@@ -222,8 +224,11 @@ public class ProjectController {
 
     @PostMapping
     public ResponseEntity<SuccessResponse<Void>> createProject(@Valid @RequestBody ProjectCreationDTO dto) {
+
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        
         projectService.createProject(dto, userEmail);
+
         SuccessResponse<Void> response = SuccessResponse.<Void>builder()
                 .code(HttpStatus.CREATED.value())
                 .status(HttpStatus.CREATED)

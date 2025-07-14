@@ -31,16 +31,22 @@ public class ProjectService {
     private ProjectMapper projectMapper;
 
     public List<ProjectDTO> getAllProjects() {
+
+        //List<Project> projects = findAll()
+        //List<ProjectDto> dtos
+
         return projectsRepository.findAll()
                 .stream()
-                .map(projectMapper::toDto)
+                .map(projectMapper::toDto) // toDto(project) -> dto
                 .collect(Collectors.toList());
     }
 
     public ProjectDTO getProjectById(Long id) {
         Projects project = projectsRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Project with ID " + id + " not found"));
+
         ProjectDTO projectDTO = projectMapper.toDto(project);
+        
         return projectDTO;
     }
 

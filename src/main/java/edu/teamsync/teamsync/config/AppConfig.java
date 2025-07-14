@@ -23,7 +23,7 @@ public class AppConfig {
         http
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/register", "/auth/login","/api/health","/auth/refresh").permitAll()
+                        .requestMatchers("/auth/register", "/auth/login","/api/health","/auth/refresh","/pollvotes/voters/{id}","/practice/feedposts").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtValidator, BasicAuthenticationFilter.class)

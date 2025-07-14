@@ -38,3 +38,9 @@ public class ProjectMembers {
         owner, admin, member, guest, viewer
     }
 }
+
+// project 1 - user 1 ,
+// project 1 - user 2
+// project 2 - user 2
+
+// Project table : 1

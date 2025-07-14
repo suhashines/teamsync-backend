@@ -2,21 +2,19 @@ package edu.teamsync.teamsync.dto.feedPostDTO;
 
 import java.time.LocalDate;
 
-import edu.teamsync.teamsync.entity.FeedPosts;
+import edu.teamsync.teamsync.entity.FeedPosts.FeedPostType;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
-@Builder
 @Data
+@Builder
 public class FeedPostCreatePracticeDto {
-    @NotNull(message="type cannot be null")
-    public FeedPosts.FeedPostType type ; 
-    @NotNull(message="type cannot be null")
-    public String content ;
-    
-    private String[] mediaUrls ;
-    private LocalDate eventDate;
-    private String[] pollOptions;
-
+    @NotNull(message="must provide type")
+     private FeedPostType type;
+     @NotNull(message="content should be here")
+     private String content;
+      private String[] mediaUrls;
+       private LocalDate eventDate;
+       private String[] pollOptions;
 }

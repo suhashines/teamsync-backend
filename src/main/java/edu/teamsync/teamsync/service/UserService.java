@@ -9,6 +9,8 @@ import edu.teamsync.teamsync.mapper.UserMapper;
 import edu.teamsync.teamsync.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -99,5 +101,11 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + id));
 
         userRepository.deleteById(id);
+    }
+
+    public Users getCurrentUser(){
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Users user = userRepository.findByEmail(email);
+        return user ;
     }
 }

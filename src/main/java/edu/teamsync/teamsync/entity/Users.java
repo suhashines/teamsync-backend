@@ -23,18 +23,18 @@ public class Users {
     private String name;
 
     @Column(nullable = false, unique = true)
-    private String email;
+    private String email; //findByEmail(String email)
 
     @Column(nullable = false)
     private String password;
 
     private String profilePicture;
 
-    private String designation;
+    private String designation; //prithu namer manager ke ke -> findByName, findByDesignation , findByNameAndDesignation(String name,String designation)
 
     private LocalDate birthdate;
 
-    private LocalDate joinDate;
+    private LocalDate joinDate; //01-07-2025 (minDate), 31-07-2025(maxDate) , findByJoinDateBetween(LocalDate minDate,LocalDate maxDate)
 
-    private Boolean predictedBurnoutRisk;
+    private Boolean predictedBurnoutRisk; //findByPredictedBurnoutRiskTrue()
 }
