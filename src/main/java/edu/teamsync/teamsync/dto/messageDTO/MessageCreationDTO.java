@@ -8,9 +8,6 @@ import jakarta.validation.constraints.NotNull;
 public record MessageCreationDTO(
         @NotBlank(message = "Content cannot be blank")
         String content,
-        @NotNull(message = "Channel id cannot be null")
-        Long channelId,
-        @NotNull(message = "Recipient id cannot be null")
         Long recipientId,
         Long threadParentId
 ) {}
