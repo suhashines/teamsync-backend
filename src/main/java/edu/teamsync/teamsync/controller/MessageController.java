@@ -49,10 +49,10 @@ public class MessageController {
 //                .build();
 //        return ResponseEntity.status(HttpStatus.CREATED).body(resp);
 //    }
-    @PostMapping("/message")
-    public ResponseEntity<SuccessResponse<Void>> createIndividualMessage(
+    @PostMapping("/messages")
+    public ResponseEntity<SuccessResponse<Void>> createChannelMessage(
             @Valid @RequestBody MessageCreationDTO requestDto) {
-        messageService.createIndividualMessage(requestDto);
+        messageService.createChannelMessage(requestDto);
         SuccessResponse<Void> resp = SuccessResponse.<Void>builder()
                 .code(HttpStatus.CREATED.value())
                 .status(HttpStatus.CREATED)

@@ -37,7 +37,6 @@ class MessageDTOTests {
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
     }
-
     @Nested
     @DisplayName("MessageCreationDTO Tests")
     class MessageCreationDTOTest {
@@ -52,12 +51,12 @@ class MessageDTOTests {
             Long threadParentId = 3L;
 
             // When
-            MessageCreationDTO dto = new MessageCreationDTO(content, recipientId, threadParentId);
+            MessageCreationDTO dto = new MessageCreationDTO(content, recipientId, channelId, threadParentId);
 
             // Then
             assertNotNull(dto);
             assertEquals(content, dto.content());
-//            assertEquals(channelId, dto.channelId());
+            assertEquals(channelId, dto.channelId());
             assertEquals(recipientId, dto.recipientId());
             assertEquals(threadParentId, dto.threadParentId());
         }
@@ -67,14 +66,16 @@ class MessageDTOTests {
         void shouldCreateValidMessageCreationDTOWithNullThreadParentId() {
             // Given
             String content = "Hello, World!";
+            Long channelId = 1L;
             Long recipientId = 2L;
 
             // When
-            MessageCreationDTO dto = new MessageCreationDTO(content, recipientId, null);
+            MessageCreationDTO dto = new MessageCreationDTO(content, recipientId, channelId, null);
 
             // Then
             assertNotNull(dto);
             assertEquals(content, dto.content());
+            assertEquals(channelId, dto.channelId());
             assertEquals(recipientId, dto.recipientId());
             assertNull(dto.threadParentId());
         }
@@ -83,7 +84,7 @@ class MessageDTOTests {
         @DisplayName("Should pass validation with valid data")
         void shouldPassValidationWithValidData() {
             // Given
-            MessageCreationDTO dto = new MessageCreationDTO("Valid content", 1L, 2L);
+            MessageCreationDTO dto = new MessageCreationDTO("Valid content", 1L, 2L, null);
 
             // When
             Set<ConstraintViolation<MessageCreationDTO>> violations = validator.validate(dto);
@@ -98,7 +99,7 @@ class MessageDTOTests {
         @DisplayName("Should fail validation with blank content")
         void shouldFailValidationWithBlankContent(String content) {
             // Given
-            MessageCreationDTO dto = new MessageCreationDTO(content, 1L, 2L);
+            MessageCreationDTO dto = new MessageCreationDTO(content, 1L, 2L, null);
 
             // When
             Set<ConstraintViolation<MessageCreationDTO>> violations = validator.validate(dto);
@@ -109,26 +110,11 @@ class MessageDTOTests {
                     .anyMatch(v -> v.getMessage().equals("Content cannot be blank")));
         }
 
-//        @Test
-//        @DisplayName("Should fail validation with null channelId")
-//        void shouldFailValidationWithNullChannelId() {
-//            // Given
-//            MessageCreationDTO dto = new MessageCreationDTO("Valid content", null, 2L, 3L);
-//
-//            // When
-//            Set<ConstraintViolation<MessageCreationDTO>> violations = validator.validate(dto);
-//
-//            // Then
-//            assertFalse(violations.isEmpty());
-//            assertTrue(violations.stream()
-//                    .anyMatch(v -> v.getMessage().equals("Channel id cannot be null")));
-//        }
-
         @Test
         @DisplayName("Should fail validation with null recipientId")
         void shouldFailValidationWithNullRecipientId() {
             // Given
-            MessageCreationDTO dto = new MessageCreationDTO("Valid content", 1L, null);
+            MessageCreationDTO dto = new MessageCreationDTO("Valid content", null, 1L, null);
 
             // When
             Set<ConstraintViolation<MessageCreationDTO>> violations = validator.validate(dto);
@@ -140,10 +126,25 @@ class MessageDTOTests {
         }
 
         @Test
+        @DisplayName("Should fail validation with null channelId")
+        void shouldFailValidationWithNullChannelId() {
+            // Given
+            MessageCreationDTO dto = new MessageCreationDTO("Valid content", 1L, null, null);
+
+            // When
+            Set<ConstraintViolation<MessageCreationDTO>> violations = validator.validate(dto);
+
+            // Then
+            assertFalse(violations.isEmpty());
+            assertTrue(violations.stream()
+                    .anyMatch(v -> v.getMessage().equals("Channel id cannot be null")));
+        }
+
+        @Test
         @DisplayName("Should serialize to JSON with snake_case")
         void shouldSerializeToJsonWithSnakeCase() throws Exception {
             // Given
-            MessageCreationDTO dto = new MessageCreationDTO("Test message", 1L, 2L);
+            MessageCreationDTO dto = new MessageCreationDTO("Test message", 2L, 1L, 3L);
 
             // When
             String json = objectMapper.writeValueAsString(dto);
@@ -166,7 +167,7 @@ class MessageDTOTests {
 
             // Then
             assertEquals("Test message", dto.content());
-//            assertEquals(1L, dto.channelId());
+            assertEquals(1L, dto.channelId());
             assertEquals(2L, dto.recipientId());
             assertEquals(3L, dto.threadParentId());
         }
@@ -175,9 +176,9 @@ class MessageDTOTests {
         @DisplayName("Should test equality and hashCode")
         void shouldTestEqualityAndHashCode() {
             // Given
-            MessageCreationDTO dto1 = new MessageCreationDTO("Test", 1L, 2L);
-            MessageCreationDTO dto2 = new MessageCreationDTO("Test", 1L, 2L);
-            MessageCreationDTO dto3 = new MessageCreationDTO("Different", 1L, 2L);
+            MessageCreationDTO dto1 = new MessageCreationDTO("Test", 1L, 2L, null);
+            MessageCreationDTO dto2 = new MessageCreationDTO("Test", 1L, 2L, null);
+            MessageCreationDTO dto3 = new MessageCreationDTO("Different", 1L, 2L, null);
 
             // Then
             assertEquals(dto1, dto2);
@@ -426,7 +427,7 @@ class MessageDTOTests {
         @DisplayName("Should convert MessageCreationDTO to MessageResponseDTO simulation")
         void shouldConvertMessageCreationDTOToMessageResponseDTO() {
             // Given
-            MessageCreationDTO creationDTO = new MessageCreationDTO("Test message", 1L, 2L);
+            MessageCreationDTO creationDTO = new MessageCreationDTO("Test message", 1L, 2L,null);
             Long messageId = 100L;
             Long senderId = 999L;
             Long channelId = 1L;
@@ -458,7 +459,7 @@ class MessageDTOTests {
         @DisplayName("Should handle MessageUpdateDTO with same validation rules as MessageCreationDTO")
         void shouldHandleMessageUpdateDTOWithSameValidationRules() {
             // Given
-            MessageCreationDTO creationDTO = new MessageCreationDTO("Original message", 1L, 2L);
+            MessageCreationDTO creationDTO = new MessageCreationDTO("Original message", 1L, 2L,null);
             MessageUpdateDTO updateDTO = new MessageUpdateDTO(1L, 2L, "Updated message");
 
             // When
@@ -478,7 +479,7 @@ class MessageDTOTests {
         void shouldHandleEdgeCasesWithVeryLongContent() {
             // Given
             String longContent = "A".repeat(10000);
-            MessageCreationDTO creationDTO = new MessageCreationDTO(longContent, 1L, 2L);
+            MessageCreationDTO creationDTO = new MessageCreationDTO(longContent, 1L, 2L,null);
             MessageUpdateDTO updateDTO = new MessageUpdateDTO(1L, 2L, longContent);
 
             // When
@@ -497,7 +498,7 @@ class MessageDTOTests {
         void shouldHandleSpecialCharactersInContent() {
             // Given
             String specialContent = "Hello! 🌟 This is a test with émojis and spëcial chars: @#$%^&*()";
-            MessageCreationDTO creationDTO = new MessageCreationDTO(specialContent, 1L, 2L);
+            MessageCreationDTO creationDTO = new MessageCreationDTO(specialContent, 1L, 2L,null);
 
             // When
             Set<ConstraintViolation<MessageCreationDTO>> violations = validator.validate(creationDTO);

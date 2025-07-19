@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: {{BASE_SERVER}}/channels/1/messages
+  url: {{BASE_SERVER}}/channels/messages
   body: json
   auth: inherit
 }
@@ -16,7 +16,9 @@ headers {
 
 body:json {
   {
-    "content": "Ai backend",
+    "content": "Ai forntend",
+    "channel_id":3,
+    "recipient_id": null,
     "thread_parent_id": 25
   }
 }
