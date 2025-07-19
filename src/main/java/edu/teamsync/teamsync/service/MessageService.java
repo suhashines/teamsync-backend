@@ -1,5 +1,6 @@
 package edu.teamsync.teamsync.service;
 
+import edu.teamsync.teamsync.dto.messageDTO.FileCreationDTO;
 import edu.teamsync.teamsync.dto.messageDTO.MessageCreationDTO;
 import edu.teamsync.teamsync.dto.messageDTO.MessageResponseDTO;
 import edu.teamsync.teamsync.dto.messageDTO.MessageUpdateDTO;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,6 +37,12 @@ public class MessageService {
 
     @Autowired
     private MessageMapper messageMapper;
+
+    @Autowired
+    private AzureStorageService azureStorageService;
+
+    @Autowired
+    private UserService userService;
 
     public List<MessageResponseDTO> getChannelMessages(Long channelId) {
         // Validate channel exists
@@ -85,6 +93,63 @@ public class MessageService {
 
         messageRepository.save(message);
 //        return messageMapper.toDto(savedMessage);
+    }
+
+    @Transactional
+    public void createMessageWithFiles( MessageCreationDTO requestDto) {
+    
+        Users sender = userService.getCurrentUser();
+        if (sender == null) {
+            throw new NotFoundException("User is unauthorized");
+        }
+
+        //validate channel if provided
+
+        Channels channel = null ;
+
+        if (requestDto.channelId() != null) {
+            channel = channelRepository.findById(requestDto.channelId())
+                    .orElseThrow(() -> new NotFoundException("Channel with ID " + requestDto.channelId() + " not found"));
+        }
+
+        // Validate recipient if provided
+        Users recipient = null;
+        if (requestDto.recipientId() != null) {
+            recipient = userRepository.findById(requestDto.recipientId())
+                    .orElseThrow(() -> new NotFoundException("Recipient with ID " + requestDto.recipientId() + " not found"));
+        }
+
+        // Validate thread parent if provided
+        Messages threadParent = null;
+        if (requestDto.threadParentId() != null) {
+            threadParent = messageRepository.findById(requestDto.threadParentId())
+                    .orElseThrow(() -> new NotFoundException("Thread parent message with ID " + requestDto.threadParentId() + " not found"));
+        }
+
+        // Create list of messages to save
+        List<Messages> messagesToSave = new ArrayList<>();
+        
+        // Create a separate message for each file
+        for (FileCreationDTO fileDto : requestDto.files()) {
+            String fileUrl = azureStorageService.uploadFile(fileDto.file());
+            String fileType = fileDto.getFileType();
+            
+            Messages message = Messages.builder()
+                    .content("")
+                    .sender(sender)
+                    .channel(channel)
+                    .recipient(recipient)
+                    .threadParent(threadParent)
+                    .timestamp(ZonedDateTime.now())
+                    .fileUrl(fileUrl)
+                    .fileType(fileType)
+                    .build();
+            
+            messagesToSave.add(message);
+        }
+        
+        // Save all messages in bulk
+        messageRepository.saveAll(messagesToSave);
     }
 
     public MessageResponseDTO getChannelMessage(Long channelId, Long messageId) {

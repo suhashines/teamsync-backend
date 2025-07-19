@@ -1,6 +1,7 @@
 
 package edu.teamsync.teamsync.controller;
 
+import edu.teamsync.teamsync.dto.messageDTO.FileCreationDTO;
 import edu.teamsync.teamsync.dto.messageDTO.MessageCreationDTO;
 import edu.teamsync.teamsync.dto.messageDTO.MessageResponseDTO;
 import edu.teamsync.teamsync.dto.messageDTO.MessageUpdateDTO;
@@ -9,10 +10,12 @@ import edu.teamsync.teamsync.service.MessageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -49,6 +52,32 @@ public class MessageController {
                 .build();
         return ResponseEntity.status(HttpStatus.CREATED).body(resp);
     }
+
+    @PostMapping(value = "/files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<SuccessResponse<Void>> createMessageWithFiles(
+            @RequestParam(value = "channelId", required = false) Long channelId,
+            @RequestParam(value = "recipientId", required = false) Long recipientId,
+            @RequestParam(value = "threadParentId", required = false) Long threadParentId,
+            @RequestParam("files") MultipartFile[] files) {
+        
+        // Create FileCreationDTO list from MultipartFile array
+        List<FileCreationDTO> fileDtos = java.util.Arrays.stream(files)
+                .map(file -> new FileCreationDTO(file))
+                .toList();
+        
+        // Create MessageCreationDTO with channelId from path variable
+        MessageCreationDTO requestDto = new MessageCreationDTO(null,channelId, recipientId, threadParentId, fileDtos);
+        
+        messageService.createMessageWithFiles(requestDto);
+        SuccessResponse<Void> resp = SuccessResponse.<Void>builder()
+                .code(HttpStatus.CREATED.value())
+                .status(HttpStatus.CREATED)
+                .message("Message with files created successfully")
+                .build();
+        return ResponseEntity.status(HttpStatus.CREATED).body(resp);
+    }
+
+    
 
     @GetMapping("/{channelId}/messages/{messageId}")
     public ResponseEntity<SuccessResponse<MessageResponseDTO>> getChannelMessage(
