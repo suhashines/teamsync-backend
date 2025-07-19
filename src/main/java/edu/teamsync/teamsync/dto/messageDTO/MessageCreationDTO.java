@@ -9,5 +9,6 @@ public record MessageCreationDTO(
         @NotBlank(message = "Content cannot be blank")
         String content,
         Long recipientId,
+        Long channelId,
         Long threadParentId
 ) {}

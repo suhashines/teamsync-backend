@@ -48,8 +48,9 @@ public class MessageService {
                 .collect(Collectors.toList());
     }
     @Transactional
-    public void createChannelMessage(Long channelId, MessageCreationDTO requestDto) {
+    public void createChannelMessage(MessageCreationDTO requestDto) {
         // Validate channel exists
+        if(requestDto)
         Channels channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new NotFoundException("Channel with ID " + channelId + " not found"));
 
