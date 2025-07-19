@@ -93,13 +93,13 @@ public class CommentService {
 
         commentMapper.updateEntityFromDTO(requestDTO, existingComment);
 
-        if (requestDTO.getParentCommentId() != null &&
-                !requestDTO.getParentCommentId().equals(existingComment.getParentComment() != null ? existingComment.getParentComment().getId() : null)) {
-
-            Comments newParentComment = commentRepository.findById(requestDTO.getParentCommentId())
-                    .orElseThrow(() -> new NotFoundException("Parent comment not found with id: " + requestDTO.getParentCommentId()));
-            existingComment.setParentComment(newParentComment);
-        }
+//        if (requestDTO.getParentCommentId() != null &&
+//                !requestDTO.getParentCommentId().equals(existingComment.getParentComment() != null ? existingComment.getParentComment().getId() : null)) {
+//
+//            Comments newParentComment = commentRepository.findById(requestDTO.getParentCommentId())
+//                    .orElseThrow(() -> new NotFoundException("Parent comment not found with id: " + requestDTO.getParentCommentId()));
+//            existingComment.setParentComment(newParentComment);
+//        }
 
         if (requestDTO.getReactions() != null) {
             updateCommentReactions(existingComment, requestDTO.getReactions());
@@ -183,10 +183,10 @@ public class CommentService {
         }
 
         // Check if user already has this specific reaction on this comment
-        Optional<Reactions> existingReaction = commentReactionRepository.findByUserIdAndCommentIdAndReactionType(
-                user.getId(), commentId, reactionType);
+        List<Reactions> existingReaction = commentReactionRepository.findByUserIdAndCommentId(
+                user.getId(), commentId);
 
-        if (existingReaction.isPresent()) {
+        if (existingReaction.isEmpty()) {
             // This will be caught by ValidationExceptionHandler as IllegalArgumentException
             throw new IllegalArgumentException("User already has this reaction on this comment");
         }

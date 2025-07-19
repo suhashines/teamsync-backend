@@ -36,7 +36,7 @@ public class ChannelService {
         Projects project = projectRepository.findById(requestDto.projectId())
                 .orElseThrow(() -> new NotFoundException("Project with ID " + requestDto.projectId() + " not found"));
 
-        if (channelRepository.existsByName(requestDto.name())) {
+        if (channelRepository.existsByNameIgnoreCase(requestDto.name())) {
             throw new IllegalArgumentException("Channel name '" + requestDto.name() + "' already exists");
         }
         // Validate member existence

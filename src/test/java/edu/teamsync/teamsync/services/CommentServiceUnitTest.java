@@ -97,7 +97,6 @@ public class CommentServiceUnitTest {
         updateRequestDTO.setPostId(postId);
         updateRequestDTO.setAuthorId(userId);
         updateRequestDTO.setContent("Updated comment");
-        updateRequestDTO.setParentCommentId(parentComment.getId());
         ReactionDetailDTO reactionDetailDTO = new ReactionDetailDTO();
         reactionDetailDTO.setUserId(userId);
         reactionDetailDTO.setReactionType("like");

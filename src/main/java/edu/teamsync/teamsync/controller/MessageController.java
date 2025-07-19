@@ -49,6 +49,18 @@ public class MessageController {
                 .build();
         return ResponseEntity.status(HttpStatus.CREATED).body(resp);
     }
+    @PostMapping("/individual-message")
+    public ResponseEntity<SuccessResponse<Void>> createIndividualMessage(
+            @Valid @RequestBody MessageCreationDTO requestDto) {
+        messageService.createIndividualMessage(requestDto);
+        SuccessResponse<Void> resp = SuccessResponse.<Void>builder()
+                .code(HttpStatus.CREATED.value())
+                .status(HttpStatus.CREATED)
+                .message("Message created successfully")
+//                .data(responseDto)
+                .build();
+        return ResponseEntity.status(HttpStatus.CREATED).body(resp);
+    }
 
     @GetMapping("/{channelId}/messages/{messageId}")
     public ResponseEntity<SuccessResponse<MessageResponseDTO>> getChannelMessage(

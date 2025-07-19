@@ -20,9 +20,6 @@ public class CommentUpdateRequestDTO {
 
     @NotBlank(message = "Content is required")
     private String content;
-
     private ZonedDateTime timestamp;
-    private Long parentCommentId;
     private List<ReactionDetailDTO> reactions;
-    private Integer replyCount;
 }

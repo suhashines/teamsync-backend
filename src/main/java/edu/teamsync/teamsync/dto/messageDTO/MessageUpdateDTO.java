@@ -11,9 +11,7 @@ import java.util.List;
 public record MessageUpdateDTO(
         @NotNull(message = "Channel id cannot be null")
         Long channelId,
-        @NotNull(message = "Recipient id cannot be null")
         Long recipientId,
-
         @NotBlank(message = "Content cannot be blank")
         String content
 

@@ -73,7 +73,7 @@ class MessageControllerUnitTest {
 
         createDTO = new MessageCreationDTO(
                 "New message content",
-                100L,
+//                100L,
                 20L,
                 null
         );
@@ -172,7 +172,7 @@ class MessageControllerUnitTest {
     void createChannelMessage_InvalidData_ReturnsBadRequest() throws Exception {
         MessageCreationDTO invalidDTO = new MessageCreationDTO(
                 null, // blank content
-                100L,
+//                100L,
                 20L,
                 null
         );
@@ -192,7 +192,7 @@ class MessageControllerUnitTest {
     void createChannelMessage_BlankContent_ReturnsBadRequest() throws Exception {
         MessageCreationDTO invalidDTO = new MessageCreationDTO(
                 "", // blank content
-                100L,
+//                100L,
                 20L,
                 null
         );
@@ -212,7 +212,7 @@ class MessageControllerUnitTest {
     void createChannelMessage_NullChannelId_ReturnsBadRequest() throws Exception {
         MessageCreationDTO invalidDTO = new MessageCreationDTO(
                 "Valid content",
-                null, // null channel ID
+//                null, // null channel ID
                 20L,
                 null
         );
@@ -232,7 +232,7 @@ class MessageControllerUnitTest {
     void createChannelMessage_NullRecipientId_ReturnsBadRequest() throws Exception {
         MessageCreationDTO invalidDTO = new MessageCreationDTO(
                 "Valid content",
-                100L,
+//                100L,
                 null, // null recipient ID
                 null
         );
@@ -433,7 +433,7 @@ class MessageControllerUnitTest {
     void createChannelMessage_WithThreadParentId_ReturnsCreatedResponse() throws Exception {
         MessageCreationDTO threadDTO = new MessageCreationDTO(
                 "Reply to thread",
-                100L,
+//                100L,
                 20L,
                 1L // thread parent ID
         );

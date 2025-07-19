@@ -47,11 +47,10 @@ public class PollVoteService {
         return  pollVotesMapper.toDTO(pollVote);
 
     }
-
     public void createPollVote(PollVoteCreationDTO request, String userEmail) {
         Users user = usersRepository.findByEmail(userEmail);
         if (user == null) {
-            throw new NotFoundException("User not found with email "+userEmail);
+            throw new NotFoundException("User not found with email " + userEmail);
         }
 
         FeedPosts poll = feedPostsRepository.findById(request.getPollId())
@@ -62,9 +61,16 @@ public class PollVoteService {
             throw new NotFoundException("The specified post is not a poll");
         }
 
-        if (!isValidPollOption(poll.getPollOptions(), request.getSelectedOption())) {
-            throw new NotFoundException("Invalid poll option selected "+ request.getSelectedOption());
+        // Check if user has already voted on this poll
+        boolean hasAlreadyVoted = pollVotesRepository.existsByPollAndUser(poll, user);
+        if (hasAlreadyVoted) {
+            throw new IllegalArgumentException("User has already voted on this poll");
         }
+
+        if (!isValidPollOption(poll.getPollOptions(), request.getSelectedOption())) {
+            throw new NotFoundException("Invalid poll option selected " + request.getSelectedOption());
+        }
+
         PollVotes pollVote = PollVotes.builder()
                 .poll(poll)
                 .user(user)

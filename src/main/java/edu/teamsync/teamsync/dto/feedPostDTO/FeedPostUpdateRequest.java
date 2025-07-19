@@ -25,5 +25,4 @@ public class FeedPostUpdateRequest {
     private String[] pollOptions;
     private Boolean isAiGenerated;
     private String aiSummary;
-    private List<ReactionDetailDTO> reactions;
 }

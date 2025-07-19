@@ -34,6 +34,39 @@ public class ReactionService {
         return reactionMapper.reactionsResponseToDTO(reactions);
     }
 
+//    public void addReaction(Long postId, ReactionCreateRequestDTO request) {
+//        FeedPosts post = feedPostRepository.findById(postId)
+//                .orElseThrow(() -> new NotFoundException("FeedPost not found with id: " + postId));
+//        Users user = userRepository.findById(request.getUserId())
+//                .orElseThrow(() -> new NotFoundException("User not found with id: " + request.getUserId()));
+//
+//        Reactions.ReactionType reactionType;
+//        try {
+//            reactionType = Reactions.ReactionType.valueOf(request.getReactionType());
+//        } catch (IllegalArgumentException e) {
+//            throw new IllegalArgumentException("Invalid reaction type: " + request.getReactionType());
+//        }
+//
+//        // Check if user already has this reaction on this post
+//        List<Reactions> existingReactions = reactionRepository.findByUserIdAndPostId(request.getUserId(), postId);
+//        boolean reactionExists = existingReactions.stream()
+//                .anyMatch(r -> r.getReactionType() == reactionType);
+//
+//        if (reactionExists) {
+//            throw new IllegalArgumentException("User already has this reaction on this post");
+//        }
+//
+//        // Create new reaction
+//        Reactions reaction = Reactions.builder()
+//                .user(user)
+//                .post(post)
+//                .reactionType(reactionType)
+//                .createdAt(ZonedDateTime.now())
+//                .build();
+//
+//        reactionRepository.save(reaction);
+    ////        return reactionMapper.reactionResponseToDTO(savedReaction);
+//    }
     public void addReaction(Long postId, ReactionCreateRequestDTO request) {
         FeedPosts post = feedPostRepository.findById(postId)
                 .orElseThrow(() -> new NotFoundException("FeedPost not found with id: " + postId));
@@ -47,13 +80,11 @@ public class ReactionService {
             throw new IllegalArgumentException("Invalid reaction type: " + request.getReactionType());
         }
 
-        // Check if user already has this reaction on this post
+        // Check if user already has ANY reaction on this post
         List<Reactions> existingReactions = reactionRepository.findByUserIdAndPostId(request.getUserId(), postId);
-        boolean reactionExists = existingReactions.stream()
-                .anyMatch(r -> r.getReactionType() == reactionType);
 
-        if (reactionExists) {
-            throw new IllegalArgumentException("User already has this reaction on this post");
+        if (!existingReactions.isEmpty()) {
+            throw new IllegalArgumentException("User already has a reaction on this post");
         }
 
         // Create new reaction
@@ -65,7 +96,6 @@ public class ReactionService {
                 .build();
 
         reactionRepository.save(reaction);
-//        return reactionMapper.reactionResponseToDTO(savedReaction);
     }
 
     public void removeReaction(Long postId, Long userId, String reactionType) {

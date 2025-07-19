@@ -273,8 +273,6 @@ class CommentDTOTests {
             dto.setAuthorId(2L);
             dto.setContent("Updated content");
             dto.setTimestamp(now);
-            dto.setParentCommentId(3L);
-            dto.setReplyCount(4);
 
             // When
             Set<ConstraintViolation<CommentUpdateRequestDTO>> violations = validator.validate(dto);
@@ -285,8 +283,6 @@ class CommentDTOTests {
             assertEquals(2L, dto.getAuthorId());
             assertEquals("Updated content", dto.getContent());
             assertEquals(now, dto.getTimestamp());
-            assertEquals(3L, dto.getParentCommentId());
-            assertEquals(4, dto.getReplyCount());
         }
 
         @Test
@@ -348,8 +344,6 @@ class CommentDTOTests {
             dto.setPostId(1L);
             dto.setAuthorId(2L);
             dto.setContent("Updated content");
-            dto.setParentCommentId(3L);
-            dto.setReplyCount(4);
 
             // When
             String json = objectMapper.writeValueAsString(dto);
