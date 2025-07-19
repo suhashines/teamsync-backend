@@ -99,7 +99,7 @@ public class MessageServiceTest {
         creationDTO = new MessageCreationDTO(
                 "New message content",
                 channelId,
-//                recipientId,
+                recipientId,
                 threadParentId
         );
 
@@ -158,7 +158,7 @@ public class MessageServiceTest {
             when(messageRepository.findById(threadParentId)).thenReturn(Optional.of(threadParent));
             when(messageRepository.save(any(Messages.class))).thenReturn(message);
 
-            messageService.createChannelMessage(channelId, creationDTO);
+            messageService.createChannelMessage(creationDTO);
 
             verify(channelRepository).findById(channelId);
             verify(userRepository).findByEmail(userEmail);
@@ -168,11 +168,12 @@ public class MessageServiceTest {
         }
     }
 
+
     @Test
     void createChannelMessage_ChannelNotFound() {
         when(channelRepository.findById(channelId)).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> messageService.createChannelMessage(channelId, creationDTO));
+        assertThrows(NotFoundException.class, () -> messageService.createChannelMessage(creationDTO));
         verify(channelRepository).findById(channelId);
         verifyNoInteractions(userRepository, messageRepository);
     }
@@ -186,12 +187,11 @@ public class MessageServiceTest {
             when(authentication.getName()).thenReturn(userEmail);
             when(userRepository.findByEmail(userEmail)).thenReturn(null);
 
-            assertThrows(NotFoundException.class, () -> messageService.createChannelMessage(channelId, creationDTO));
+            assertThrows(NotFoundException.class, () -> messageService.createChannelMessage(creationDTO));
             verify(channelRepository).findById(channelId);
             verify(userRepository).findByEmail(userEmail);
         }
     }
-
     @Test
     void createChannelMessage_RecipientNotFound() {
         try (MockedStatic<SecurityContextHolder> mockedSecurityContextHolder = mockStatic(SecurityContextHolder.class)) {
@@ -202,7 +202,7 @@ public class MessageServiceTest {
             when(userRepository.findByEmail(userEmail)).thenReturn(sender);
             when(userRepository.findById(recipientId)).thenReturn(Optional.empty());
 
-            assertThrows(NotFoundException.class, () -> messageService.createChannelMessage(channelId, creationDTO));
+            assertThrows(NotFoundException.class, () -> messageService.createChannelMessage(creationDTO));
             verify(channelRepository).findById(channelId);
             verify(userRepository).findByEmail(userEmail);
             verify(userRepository).findById(recipientId);
@@ -220,20 +220,19 @@ public class MessageServiceTest {
             when(userRepository.findById(recipientId)).thenReturn(Optional.of(recipient));
             when(messageRepository.findById(threadParentId)).thenReturn(Optional.empty());
 
-            assertThrows(NotFoundException.class, () -> messageService.createChannelMessage(channelId, creationDTO));
+            assertThrows(NotFoundException.class, () -> messageService.createChannelMessage(creationDTO));
             verify(channelRepository).findById(channelId);
             verify(userRepository).findByEmail(userEmail);
             verify(userRepository).findById(recipientId);
             verify(messageRepository).findById(threadParentId);
         }
     }
-
     @Test
     void createChannelMessage_WithoutOptionalFields() {
         MessageCreationDTO simplifiedDTO = new MessageCreationDTO(
                 "Simple message",
                 channelId,
-//                null, // no recipient
+                null, // no recipient
                 null  // no thread parent
         );
 
@@ -245,7 +244,7 @@ public class MessageServiceTest {
             when(userRepository.findByEmail(userEmail)).thenReturn(sender);
             when(messageRepository.save(any(Messages.class))).thenReturn(message);
 
-            messageService.createChannelMessage(channelId, simplifiedDTO);
+            messageService.createChannelMessage(simplifiedDTO);
 
             verify(channelRepository).findById(channelId);
             verify(userRepository).findByEmail(userEmail);

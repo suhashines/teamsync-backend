@@ -1,4 +1,3 @@
-
 package edu.teamsync.teamsync.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -73,8 +72,8 @@ class MessageControllerUnitTest {
 
         createDTO = new MessageCreationDTO(
                 "New message content",
-//                100L,
                 20L,
+                100L,
                 null
         );
 
@@ -151,9 +150,9 @@ class MessageControllerUnitTest {
     @DisplayName("Should create message successfully")
     @WithMockUser(username = "user@example.com")
     void createChannelMessage_ValidData_ReturnsCreatedResponse() throws Exception {
-        doNothing().when(messageService).createChannelMessage(anyLong(), any(MessageCreationDTO.class));
+        doNothing().when(messageService).createChannelMessage(any(MessageCreationDTO.class));
 
-        mockMvc.perform(post("/channels/100/messages")
+        mockMvc.perform(post("/messages")
                         .with(user("user@example.com"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createDTO)))
@@ -163,7 +162,7 @@ class MessageControllerUnitTest {
                 .andExpect(jsonPath("$.message").value("Message created successfully"))
                 .andExpect(jsonPath("$.data").doesNotExist());
 
-        verify(messageService, times(1)).createChannelMessage(eq(100L), any(MessageCreationDTO.class));
+        verify(messageService, times(1)).createChannelMessage(any(MessageCreationDTO.class));
     }
 
     @Test
@@ -172,18 +171,18 @@ class MessageControllerUnitTest {
     void createChannelMessage_InvalidData_ReturnsBadRequest() throws Exception {
         MessageCreationDTO invalidDTO = new MessageCreationDTO(
                 null, // blank content
-//                100L,
                 20L,
+                100L,
                 null
         );
 
-        mockMvc.perform(post("/channels/100/messages")
+        mockMvc.perform(post("/messages")
                         .with(user("user@example.com"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidDTO)))
                 .andExpect(status().isBadRequest());
 
-        verify(messageService, never()).createChannelMessage(anyLong(), any(MessageCreationDTO.class));
+        verify(messageService, never()).createChannelMessage(any(MessageCreationDTO.class));
     }
 
     @Test
@@ -192,18 +191,18 @@ class MessageControllerUnitTest {
     void createChannelMessage_BlankContent_ReturnsBadRequest() throws Exception {
         MessageCreationDTO invalidDTO = new MessageCreationDTO(
                 "", // blank content
-//                100L,
                 20L,
+                100L,
                 null
         );
 
-        mockMvc.perform(post("/channels/100/messages")
+        mockMvc.perform(post("/messages")
                         .with(user("user@example.com"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidDTO)))
                 .andExpect(status().isBadRequest());
 
-        verify(messageService, never()).createChannelMessage(anyLong(), any(MessageCreationDTO.class));
+        verify(messageService, never()).createChannelMessage(any(MessageCreationDTO.class));
     }
 
     @Test
@@ -212,18 +211,18 @@ class MessageControllerUnitTest {
     void createChannelMessage_NullChannelId_ReturnsBadRequest() throws Exception {
         MessageCreationDTO invalidDTO = new MessageCreationDTO(
                 "Valid content",
-//                null, // null channel ID
                 20L,
+                null, // null channel ID
                 null
         );
 
-        mockMvc.perform(post("/channels/100/messages")
+        mockMvc.perform(post("/messages")
                         .with(user("user@example.com"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidDTO)))
                 .andExpect(status().isBadRequest());
 
-        verify(messageService, never()).createChannelMessage(anyLong(), any(MessageCreationDTO.class));
+        verify(messageService, never()).createChannelMessage(any(MessageCreationDTO.class));
     }
 
     @Test
@@ -232,18 +231,18 @@ class MessageControllerUnitTest {
     void createChannelMessage_NullRecipientId_ReturnsBadRequest() throws Exception {
         MessageCreationDTO invalidDTO = new MessageCreationDTO(
                 "Valid content",
-//                100L,
                 null, // null recipient ID
+                100L,
                 null
         );
 
-        mockMvc.perform(post("/channels/100/messages")
+        mockMvc.perform(post("/messages")
                         .with(user("user@example.com"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidDTO)))
                 .andExpect(status().isBadRequest());
 
-        verify(messageService, never()).createChannelMessage(anyLong(), any(MessageCreationDTO.class));
+        verify(messageService, never()).createChannelMessage(any(MessageCreationDTO.class));
     }
 
     @Test
@@ -389,7 +388,7 @@ class MessageControllerUnitTest {
     @DisplayName("Should handle missing request body for create message")
     @WithMockUser(username = "user@example.com")
     void createChannelMessage_MissingRequestBody_ReturnsBadRequest() throws Exception {
-        mockMvc.perform(post("/channels/100/messages")
+        mockMvc.perform(post("/messages")
                         .with(user("user@example.com"))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
@@ -409,7 +408,7 @@ class MessageControllerUnitTest {
     @DisplayName("Should handle malformed JSON for create message")
     @WithMockUser(username = "user@example.com")
     void createChannelMessage_MalformedJSON_ReturnsBadRequest() throws Exception {
-        mockMvc.perform(post("/channels/100/messages")
+        mockMvc.perform(post("/messages")
                         .with(user("user@example.com"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ invalid json }"))
@@ -433,14 +432,14 @@ class MessageControllerUnitTest {
     void createChannelMessage_WithThreadParentId_ReturnsCreatedResponse() throws Exception {
         MessageCreationDTO threadDTO = new MessageCreationDTO(
                 "Reply to thread",
-//                100L,
                 20L,
+                100L,
                 1L // thread parent ID
         );
 
-        doNothing().when(messageService).createChannelMessage(anyLong(), any(MessageCreationDTO.class));
+        doNothing().when(messageService).createChannelMessage(any(MessageCreationDTO.class));
 
-        mockMvc.perform(post("/channels/100/messages")
+        mockMvc.perform(post("/messages")
                         .with(user("user@example.com"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(threadDTO)))
@@ -449,7 +448,7 @@ class MessageControllerUnitTest {
                 .andExpect(jsonPath("$.status").value("CREATED"))
                 .andExpect(jsonPath("$.message").value("Message created successfully"));
 
-        verify(messageService, times(1)).createChannelMessage(eq(100L), any(MessageCreationDTO.class));
+        verify(messageService, times(1)).createChannelMessage(any(MessageCreationDTO.class));
     }
 
     @Test
