@@ -1,11 +1,11 @@
 meta {
-  name: create-message
+  name: create-individual-message
   type: http
-  seq: 3
+  seq: 6
 }
 
 post {
-  url: {{BASE_SERVER}}/channels/1/messages
+  url: {{BASE_SERVER}}/channels/individual-message
   body: json
   auth: inherit
 }
@@ -17,6 +17,7 @@ headers {
 body:json {
   {
     "content": "Ai backend",
+    "recipient_id": 15,
     "thread_parent_id": 25
   }
 }

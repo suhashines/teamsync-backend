@@ -63,12 +63,6 @@ public class FeedPostService {
 
         // Update basic fields using mapper
         feedPostMapper.updateEntityFromRequest(request, existingPost);
-
-        // Handle reactions if provided in the request
-        if (request.getReactions() != null) {
-            updateReactions(existingPost, request.getReactions());
-        }
-
         feedPostsRepository.save(existingPost);
 //        return feedPostMapper.toResponse(updatedPost);
     }
@@ -77,31 +71,9 @@ public class FeedPostService {
         if (!feedPostsRepository.existsById(id)) {
             throw new NotFoundException("FeedPost not found with id: " + id);
         }
-
         // Delete associated reactions first
         reactionsRepository.deleteByPostId(id);
-
         // Delete the feed post
         feedPostsRepository.deleteById(id);
-    }
-
-    private void updateReactions(FeedPosts feedPost, List<ReactionDetailDTO> newReactions) {
-        // Remove existing reactions for this post
-        reactionsRepository.deleteByPostId(feedPost.getId());
-
-        // Add new reactions
-        for (ReactionDetailDTO reactionDto : newReactions) {
-            Users user = usersRepository.findById(reactionDto.getUserId())
-                    .orElseThrow(() -> new NotFoundException("User not found with id: " + reactionDto.getUserId()));
-
-            Reactions reaction = Reactions.builder()
-                    .user(user)
-                    .post(feedPost)
-                    .reactionType(Reactions.ReactionType.valueOf(reactionDto.getReactionType()))
-                    .createdAt(reactionDto.getCreatedAt() != null ? reactionDto.getCreatedAt() : ZonedDateTime.now())
-                    .build();
-
-            reactionsRepository.save(reaction);
-        }
     }
 }

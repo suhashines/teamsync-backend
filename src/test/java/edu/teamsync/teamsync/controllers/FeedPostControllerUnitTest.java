@@ -117,7 +117,6 @@ class FeedPostControllerUnitTest {
         updateRequest.setPollOptions(new String[]{"Updated Option 1", "Updated Option 2"});
         updateRequest.setIsAiGenerated(true);
         updateRequest.setAiSummary("Updated AI summary");
-        updateRequest.setReactions(List.of(new ReactionDetailDTO()));
     }
 
     @Test

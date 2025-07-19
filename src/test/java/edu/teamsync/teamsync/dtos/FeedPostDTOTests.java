@@ -278,7 +278,7 @@ class FeedPostDTOTests {
             request.setPollOptions(new String[]{"Option 1", "Option 2"});
             request.setIsAiGenerated(true);
             request.setAiSummary("AI summary");
-            request.setReactions(Arrays.asList(new ReactionDetailDTO()));
+
 
             // When
             Set<ConstraintViolation<FeedPostUpdateRequest>> violations = validator.validate(request);
@@ -294,7 +294,7 @@ class FeedPostDTOTests {
             assertArrayEquals(new String[]{"Option 1", "Option 2"}, request.getPollOptions());
             assertTrue(request.getIsAiGenerated());
             assertEquals("AI summary", request.getAiSummary());
-            assertNotNull(request.getReactions());
+
         }
 
         @Test

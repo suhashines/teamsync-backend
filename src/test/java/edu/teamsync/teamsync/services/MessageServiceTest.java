@@ -99,7 +99,7 @@ public class MessageServiceTest {
         creationDTO = new MessageCreationDTO(
                 "New message content",
                 channelId,
-                recipientId,
+//                recipientId,
                 threadParentId
         );
 
@@ -233,7 +233,7 @@ public class MessageServiceTest {
         MessageCreationDTO simplifiedDTO = new MessageCreationDTO(
                 "Simple message",
                 channelId,
-                null, // no recipient
+//                null, // no recipient
                 null  // no thread parent
         );
 

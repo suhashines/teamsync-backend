@@ -98,9 +98,7 @@ class CommentControllerUnitTest {
         updateDTO.setAuthorId(10L);
         updateDTO.setContent("This is an updated comment");
         updateDTO.setTimestamp(ZonedDateTime.now());
-        updateDTO.setParentCommentId(null);
         updateDTO.setReactions(List.of());
-        updateDTO.setReplyCount(0);
 
         replyCreateDTO = new ReplyCreateRequestDTO();
         replyCreateDTO.setContent("This is a reply");

@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ChannelRepository extends JpaRepository<Channels, Long> {
     boolean existsByName(String name);
+    boolean existsByNameIgnoreCase(String name);
 }

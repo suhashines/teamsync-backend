@@ -62,10 +62,10 @@ public class MessageService {
 
         // Validate recipient if provided
         Users recipient = null;
-        if (requestDto.recipientId() != null) {
-            recipient = userRepository.findById(requestDto.recipientId())
-                    .orElseThrow(() -> new NotFoundException("Recipient with ID " + requestDto.recipientId() + " not found"));
-        }
+//        if (requestDto.recipientId() != null) {
+//            recipient = userRepository.findById(requestDto.recipientId())
+//                    .orElseThrow(() -> new NotFoundException("Recipient with ID " + requestDto.recipientId() + " not found"));
+//        }
 
         // Validate thread parent if provided
         Messages threadParent = null;
@@ -78,6 +78,42 @@ public class MessageService {
                 .content(requestDto.content())
                 .sender(sender)
                 .channel(channel)
+                .recipient(recipient)
+                .threadParent(threadParent)
+                .timestamp(ZonedDateTime.now())
+                .build();
+
+        messageRepository.save(message);
+//        return messageMapper.toDto(savedMessage);
+    }
+    @Transactional
+    public void createIndividualMessage(MessageCreationDTO requestDto) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        Users sender = userRepository.findByEmail(email);
+        if (sender == null) {
+            throw new NotFoundException("User not found with email "+email);
+        }
+
+        // Validate recipient if provide
+        if (requestDto.recipientId() == null) {
+            throw new NotFoundException("Recipient ID required");
+        }
+        Users recipient = userRepository.findById(requestDto.recipientId())
+                .orElseThrow(() -> new NotFoundException("Recipient with ID " + requestDto.recipientId() + " not found"));
+
+
+        // Validate thread parent if provided
+        Messages threadParent = null;
+        if (requestDto.threadParentId() != null) {
+            threadParent = messageRepository.findById(requestDto.threadParentId())
+                    .orElseThrow(() -> new NotFoundException("Thread parent message with ID " + requestDto.threadParentId() + " not found"));
+        }
+
+        Messages message = Messages.builder()
+                .content(requestDto.content())
+                .sender(sender)
+                .channel(null)
                 .recipient(recipient)
                 .threadParent(threadParent)
                 .timestamp(ZonedDateTime.now())
