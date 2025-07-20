@@ -308,9 +308,9 @@ class MessageDTOTests {
 
             // Then
             assertNotNull(dto);
-            assertEquals(channelId, dto.channelId());
-            assertEquals(recipientId, dto.recipientId());
-            assertEquals(content, dto.content());
+            assertEquals(channelId, dto.getChannelId());
+            assertEquals(recipientId, dto.getRecipientId());
+            assertEquals(content, dto.getContent());
         }
 
         @Test
@@ -398,9 +398,9 @@ class MessageDTOTests {
             MessageUpdateDTO dto = objectMapper.readValue(json, MessageUpdateDTO.class);
 
             // Then
-            assertEquals(1L, dto.channelId());
-            assertEquals(2L, dto.recipientId());
-            assertEquals("Updated message", dto.content());
+            assertEquals(1L, dto.getChannelId());
+            assertEquals(2L, dto.getRecipientId());
+            assertEquals("Updated message", dto.getContent());
         }
 
         @Test
@@ -469,9 +469,9 @@ class MessageDTOTests {
             // Then
             assertTrue(creationViolations.isEmpty());
             assertTrue(updateViolations.isEmpty());
-//            assertEquals(creationDTO.channelId(), updateDTO.channelId());
-            assertEquals(creationDTO.recipientId(), updateDTO.recipientId());
-            assertNotEquals(creationDTO.content(), updateDTO.content());
+            assertEquals(creationDTO.channelId(), updateDTO.getChannelId());
+            assertEquals(creationDTO.recipientId(), updateDTO.getRecipientId());
+            assertNotEquals(creationDTO.content(), updateDTO.getContent());
         }
 
         @Test
@@ -490,7 +490,7 @@ class MessageDTOTests {
             assertTrue(creationViolations.isEmpty());
             assertTrue(updateViolations.isEmpty());
             assertEquals(longContent, creationDTO.content());
-            assertEquals(longContent, updateDTO.content());
+            assertEquals(longContent, updateDTO.getContent());
         }
 
         @Test

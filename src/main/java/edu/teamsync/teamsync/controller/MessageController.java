@@ -36,19 +36,6 @@ public class MessageController {
         return ResponseEntity.ok(resp);
     }
 
-//    @PostMapping("/{channelId}/messages")
-//    public ResponseEntity<SuccessResponse<Void>> createChannelMessage(
-//            @PathVariable Long channelId,
-//            @Valid @RequestBody MessageCreationDTO requestDto) {
-//        messageService.createChannelMessage(requestDto);
-//        SuccessResponse<Void> resp = SuccessResponse.<Void>builder()
-//                .code(HttpStatus.CREATED.value())
-//                .status(HttpStatus.CREATED)
-//                .message("Message created successfully")
-////                .data(responseDto)
-//                .build();
-//        return ResponseEntity.status(HttpStatus.CREATED).body(resp);
-//    }
     @PostMapping("/messages")
     public ResponseEntity<SuccessResponse<Void>> createChannelMessage(
             @Valid @RequestBody MessageCreationDTO requestDto) {
