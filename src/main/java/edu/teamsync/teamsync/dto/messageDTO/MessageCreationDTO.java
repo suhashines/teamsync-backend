@@ -1,16 +1,25 @@
 package edu.teamsync.teamsync.dto.messageDTO;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+
+import java.util.List;
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record MessageCreationDTO(
-        @NotBlank(message = "Content cannot be blank")
-        String content,
-        @NotNull(message = "Channel id cannot be null")
+        String content, // Optional - either content or files should be provided
         Long channelId,
-        @NotNull(message = "Recipient id cannot be null")
         Long recipientId,
-        Long threadParentId
-) {}
+        Long threadParentId,
+        List<FileCreationDTO> files // Optional - either content or files should be provided
+) {
+    // Custom validation to ensure either content or files is provided
+    public MessageCreationDTO {
+        if ((content == null || content.trim().isEmpty()) && (files == null || files.isEmpty())) {
+            throw new IllegalArgumentException("Either content or files must be provided");
+        }
+        
+        if (channelId == null && recipientId == null) {
+            throw new IllegalArgumentException("Either channelId or recipientId must be provided");
+        }
+    }
+} 

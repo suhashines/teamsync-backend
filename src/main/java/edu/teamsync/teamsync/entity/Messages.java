@@ -42,6 +42,12 @@ public class Messages {
     @JoinColumn(name = "thread_parent_id")
     private Messages threadParent;
 
+    @Column(name = "file_url")
+    private String fileUrl;
+
+    @Column(name = "file_type")
+    private String fileType;
+
     @PrePersist
     public void checkChannelOrRecipient() {
         if (channel == null && recipient == null) {
