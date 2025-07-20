@@ -120,15 +120,15 @@ public class MessageService {
 
         // Validate recipient if provided
         Users recipient = null;
-        if (requestDto.recipientId() != null) {
-            recipient = userRepository.findById(requestDto.recipientId())
-                    .orElseThrow(() -> new NotFoundException("Recipient with ID " + requestDto.recipientId() + " not found"));
+        if (requestDto.getRecipientId() != null) {
+            recipient = userRepository.findById(requestDto.getRecipientId())
+                    .orElseThrow(() -> new NotFoundException("Recipient with ID " + requestDto.getRecipientId() + " not found"));
         }
 
 //        existingMessage.setSender(sender);
         existingMessage.setChannel(channel);
         existingMessage.setRecipient(recipient);
-        existingMessage.setContent(requestDto.content());
+        existingMessage.setContent(requestDto.getContent());
 //        message.setThreadParent(threadParent);
 
         // Save updated message
