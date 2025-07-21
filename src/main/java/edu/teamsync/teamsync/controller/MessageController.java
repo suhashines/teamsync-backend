@@ -69,6 +69,7 @@ public class MessageController {
         MessageCreationDTO requestDto = new MessageCreationDTO(null,channelId, recipientId, threadParentId, fileDtos);
         
         messageService.createMessageWithFiles(requestDto);
+        
         SuccessResponse<Void> resp = SuccessResponse.<Void>builder()
                 .code(HttpStatus.CREATED.value())
                 .status(HttpStatus.CREATED)

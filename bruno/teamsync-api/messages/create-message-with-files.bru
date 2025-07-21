@@ -22,3 +22,19 @@ body:multipart-form {
   files: @file(/home/suhas/Pictures/aodv-nodespeed.png)
   files: @file(/home/suhas/Pictures/aodv-npackets.png)
 }
+
+docs {
+  ## This endpoint only supports sending files, for sending text content you should still use the other api
+  
+  **query params**
+  
+  you should give either channelId or recipientId
+  
+  channelId : if given, the message will be sent to channel
+  
+  recipientId: if given, the message will be sent to dm
+  
+  you can send threadParentId with any of them,
+  
+  threadParentId(optional): the message will be under a thread
+}
