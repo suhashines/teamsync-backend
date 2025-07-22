@@ -130,7 +130,7 @@ class MessageControllerUnitTest {
     @DisplayName("Should return specific message by ID with success response")
     @WithMockUser(username = "user@example.com")
     void getChannelMessage_ValidIds_ReturnsSuccessResponse() throws Exception {
-        when(messageService.getChannelMessage(100L, 1L)).thenReturn(message1);
+        when(messageService.getMessage(100L, 1L)).thenReturn(message1);
 
         mockMvc.perform(get("/channels/100/messages/1"))
                 .andExpect(status().isOk())
@@ -143,7 +143,7 @@ class MessageControllerUnitTest {
                 .andExpect(jsonPath("$.data.recipient_id").value(20))
                 .andExpect(jsonPath("$.data.content").value("Hello, this is a test message"));
 
-        verify(messageService, times(1)).getChannelMessage(100L, 1L);
+        verify(messageService, times(1)).getMessage(100L, 1L);
     }
 
     @Test

@@ -260,7 +260,7 @@ public class MessageServiceTest {
                 .thenReturn(Optional.of(message));
         when(messageMapper.toDto(message)).thenReturn(responseDTO);
 
-        MessageResponseDTO result = messageService.getChannelMessage(channelId, messageId);
+        MessageResponseDTO result = messageService.getMessage(channelId, messageId);
 
         assertNotNull(result);
         assertEquals(messageId, result.id());
@@ -273,7 +273,7 @@ public class MessageServiceTest {
     void getChannelMessage_ChannelNotFound() {
         when(channelRepository.existsById(channelId)).thenReturn(false);
 
-        assertThrows(NotFoundException.class, () -> messageService.getChannelMessage(channelId, messageId));
+        assertThrows(NotFoundException.class, () -> messageService.getMessage(channelId, messageId));
         verify(channelRepository).existsById(channelId);
         verifyNoInteractions(messageRepository, messageMapper);
     }
@@ -284,7 +284,7 @@ public class MessageServiceTest {
         when(messageRepository.findByIdAndChannelId(messageId, channelId))
                 .thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> messageService.getChannelMessage(channelId, messageId));
+        assertThrows(NotFoundException.class, () -> messageService.getMessage(channelId, messageId));
         verify(channelRepository).existsById(channelId);
         verify(messageRepository).findByIdAndChannelId(messageId, channelId);
         verifyNoInteractions(messageMapper);

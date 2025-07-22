@@ -90,17 +90,42 @@ public class MessageService {
 //        return messageMapper.toDto(savedMessage);
     }
 
-    public MessageResponseDTO getChannelMessage(Long channelId, Long messageId) {
-        // Validate channel exists
-        if (!channelRepository.existsById(channelId)) {
-            throw new NotFoundException("Channel with ID " + channelId + " not found");
+    //    public MessageResponseDTO getChannelMessage(Long channelId, Long messageId) {
+//        // Validate channel exists
+//        if (!channelRepository.existsById(channelId)) {
+//            throw new NotFoundException("Channel with ID " + channelId + " not found");
+//        }
+//
+//        // Find message by ID and channel ID
+//        Messages message = messageRepository.findByIdAndChannelId(messageId, channelId)
+//                .orElseThrow(() -> new NotFoundException("Message with ID " + messageId + " not found in channel " + channelId));
+//
+//        return messageMapper.toDto(message);
+//    }
+    public MessageResponseDTO getMessage(Long channelId, Long messageId) {
+        if (channelId != null) {
+            // Handle channel message
+            // Validate channel exists
+            if (!channelRepository.existsById(channelId)) {
+                throw new NotFoundException("Channel with ID " + channelId + " not found");
+            }
+
+            // Find message by ID and channel ID
+            Messages message = messageRepository.findByIdAndChannelId(messageId, channelId)
+                    .orElseThrow(() -> new NotFoundException("Message with ID " + messageId + " not found in channel " + channelId));
+
+            return messageMapper.toDto(message);
+        } else {
+            // Handle direct message
+            Messages message = messageRepository.findById(messageId)
+                    .orElseThrow(() -> new NotFoundException("Direct message with ID " + messageId + " not found"));
+
+            if (message.getChannel()!= null) {
+                throw new IllegalArgumentException("Message with ID " + messageId + " is not a direct message. Please provide channelId parameter.");
+            }
+
+            return messageMapper.toDto(message);
         }
-
-        // Find message by ID and channel ID
-        Messages message = messageRepository.findByIdAndChannelId(messageId, channelId)
-                .orElseThrow(() -> new NotFoundException("Message with ID " + messageId + " not found in channel " + channelId));
-
-        return messageMapper.toDto(message);
     }
 
     @Transactional
