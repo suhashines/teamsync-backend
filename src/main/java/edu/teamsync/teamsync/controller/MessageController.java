@@ -49,20 +49,40 @@ public class MessageController {
         return ResponseEntity.status(HttpStatus.CREATED).body(resp);
     }
 
-    @GetMapping("/{channelId}/messages/{messageId}")
-    public ResponseEntity<SuccessResponse<MessageResponseDTO>> getChannelMessage(
-            @PathVariable Long channelId,
+//    @GetMapping("/{channelId}/messages/{messageId}")
+//    public ResponseEntity<SuccessResponse<MessageResponseDTO>> getChannelMessage(
+//            @PathVariable Long channelId,
+//            @PathVariable Long messageId) {
+//        MessageResponseDTO responseDto = messageService.getChannelMessage(channelId, messageId);
+//        SuccessResponse<MessageResponseDTO> resp = SuccessResponse.<MessageResponseDTO>builder()
+//                .code(HttpStatus.OK.value())
+//                .status(HttpStatus.OK)
+//                .message("Message fetched successfully")
+//                .data(responseDto)
+//                .build();
+//        return ResponseEntity.ok(resp);
+//    }
+
+    @GetMapping("/messages/{messageId}")
+    public ResponseEntity<SuccessResponse<MessageResponseDTO>> getMessage(
+            @RequestParam(required = false) Long channelId,
             @PathVariable Long messageId) {
-        MessageResponseDTO responseDto = messageService.getChannelMessage(channelId, messageId);
+
+        MessageResponseDTO responseDto = messageService.getMessage(channelId, messageId);
+
+        String successMessage = channelId != null ?
+                "Channel message fetched successfully" :
+                "Direct message fetched successfully";
+
         SuccessResponse<MessageResponseDTO> resp = SuccessResponse.<MessageResponseDTO>builder()
                 .code(HttpStatus.OK.value())
                 .status(HttpStatus.OK)
-                .message("Message fetched successfully")
+                .message(successMessage)
                 .data(responseDto)
                 .build();
+
         return ResponseEntity.ok(resp);
     }
-
     @PutMapping("/{channelId}/messages/{messageId}")
     public ResponseEntity<SuccessResponse<Void>> updateChannelMessage(
             @PathVariable Long channelId,
