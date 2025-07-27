@@ -37,7 +37,7 @@ public class MessageController {
 //    }
 
     @PostMapping("/messages")
-    public ResponseEntity<SuccessResponse<Void>> createChannelMessage(
+    public ResponseEntity<SuccessResponse<Void>> createMessage(
             @Valid @RequestBody MessageCreationDTO requestDto) {
         messageService.createChannelMessage(requestDto);
         SuccessResponse<Void> resp = SuccessResponse.<Void>builder()
