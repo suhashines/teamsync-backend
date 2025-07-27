@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @ControllerAdvice
 @ResponseBody
@@ -48,15 +49,20 @@ public class HTTPExceptionHandler {
     }
 
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    @ExceptionHandler(InvalidDataAccessResourceUsageException.class)
-    public ErrorMessageDto handleUnauthorizedException(InvalidDataAccessResourceUsageException e) {
+    @ExceptionHandler(UnauthorizedException.class)
+    public ErrorMessageDto handleUnauthorizedException(UnauthorizedException e) {
         logger.error("UNAUTHORIZED", e);
-        return new ErrorMessageDto("Invalid authorization headers", "UNAUTHORIZED");
+        return new ErrorMessageDto(e.getMessage(), "UNAUTHORIZED");
     }
+
+
+
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    @ExceptionHandler(org.springframework.security.authorization.AuthorizationDeniedException.class)
-    public ErrorMessage handleAuthorizationDeniedException(org.springframework.security.authorization.AuthorizationDeniedException e) {
-        logger.error("AUTHORIZATION_DENIED", e);
-        return new ErrorMessage("Access Denied", "Only project admins or owners can perform this action");
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ErrorMessageDto handleAccessDeniedException(org.springframework.security.access.AccessDeniedException e) {
+        logger.error("ACCESS_DENIED", e);
+        return new ErrorMessageDto("Only users with manager designation can perform this action", "FORBIDDEN");
     }
+
+
 }

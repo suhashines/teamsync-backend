@@ -1,5 +1,7 @@
 package edu.teamsync.teamsync.controller;
 
+import edu.teamsync.teamsync.authorization.UserAuthorizationService;
+import edu.teamsync.teamsync.dto.userDTO.DesignationUpdateDto;
 import edu.teamsync.teamsync.dto.userDTO.UserCreationDTO;
 import edu.teamsync.teamsync.dto.userDTO.UserResponseDTO;
 import edu.teamsync.teamsync.dto.userDTO.UserUpdateDTO;
@@ -14,6 +16,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 
 @Slf4j
 @RestController
@@ -91,6 +98,21 @@ public class UserController {
                 .code(HttpStatus.NO_CONTENT.value())
                 .status(HttpStatus.OK)
                 .message("User deleted successfully")
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/designation/{id}")
+    @PreAuthorize("@userAuthorizationService.isManager()")
+    public ResponseEntity<SuccessResponse<UserResponseDTO>> updateDesignation(@PathVariable Long id, @Valid @RequestBody DesignationUpdateDto dto) {
+        UserResponseDTO user = userService.updateDesignation(id, dto);
+
+        SuccessResponse<UserResponseDTO> response = SuccessResponse.<UserResponseDTO>builder()
+                .code(HttpStatus.OK.value())
+                .status(HttpStatus.OK)
+                .data(user)
+                .message("Designation updated successfully")
                 .build();
 
         return ResponseEntity.ok(response);

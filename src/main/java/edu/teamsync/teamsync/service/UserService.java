@@ -1,5 +1,6 @@
 package edu.teamsync.teamsync.service;
 
+import edu.teamsync.teamsync.dto.userDTO.DesignationUpdateDto;
 import edu.teamsync.teamsync.dto.userDTO.UserCreationDTO;
 import edu.teamsync.teamsync.dto.userDTO.UserResponseDTO;
 import edu.teamsync.teamsync.dto.userDTO.UserUpdateDTO;
@@ -7,6 +8,7 @@ import edu.teamsync.teamsync.entity.Users;
 import edu.teamsync.teamsync.exception.http.NotFoundException;
 import edu.teamsync.teamsync.mapper.UserMapper;
 import edu.teamsync.teamsync.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -112,5 +114,33 @@ public class UserService {
             throw new NotFoundException("User not found with email: " + email);
         }
         return user ;
+    }
+
+    public UserResponseDTO updateDesignation(Long id, DesignationUpdateDto dto) {
+     
+        Users user = userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + id));
+
+        user.setDesignation(dto.getDesignation());
+        userRepository.save(user);
+        return userMapper.toResponseDTO(user);
+    }
+
+    /**
+     * Check if the current authenticated user has manager designation
+     * @return true if current user has manager designation, false otherwise
+     */
+    public boolean isCurrentUserManager() {
+        Users currentUser = getCurrentUser();
+        return "manager".equalsIgnoreCase(currentUser.getDesignation());
+    }
+
+    /**
+     * Get the designation of the current authenticated user
+     * @return the designation of the current user, or null if not set
+     */
+    public String getCurrentUserDesignation() {
+        Users currentUser = getCurrentUser();
+        return currentUser.getDesignation();
     }
 }
