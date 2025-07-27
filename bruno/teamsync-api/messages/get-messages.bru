@@ -1,0 +1,38 @@
+meta {
+  name: get-messages
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{BASE_SERVER}}/channels/get-messages?channelId=1
+  body: none
+  auth: inherit
+}
+
+params:query {
+  channelId: 1
+}
+
+headers {
+  Authorization: Bearer {{jwt}}
+}
+
+settings {
+  encodeUrl: true
+}
+
+docs {
+  Overview:
+  The Get Messages API provides a unified endpoint to retrieve messages from either a specific channel or direct messages between two users.
+  
+  Important: Exactly one of channelId or recipientId must be provided, but not both.
+  
+  1. Get Channel Messages:
+  GET  /channels/get-messages?channelId=1
+  Authorization: Bearer your-jwt-token
+  
+  2.  Get Direct Messages:
+  GET /channels/get-messages?recipientId=3
+  Authorization: Bearer your-jwt-token
+}

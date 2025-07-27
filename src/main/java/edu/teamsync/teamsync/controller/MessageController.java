@@ -23,18 +23,18 @@ public class MessageController {
 
     private final MessageService messageService;
 
-    @GetMapping("/{channelId}/messages")
-    public ResponseEntity<SuccessResponse<List<MessageResponseDTO>>> getChannelMessages(
-            @PathVariable Long channelId) {
-        List<MessageResponseDTO> messages = messageService.getChannelMessages(channelId);
-        SuccessResponse<List<MessageResponseDTO>> resp = SuccessResponse.<List<MessageResponseDTO>>builder()
-                .code(HttpStatus.OK.value())
-                .status(HttpStatus.OK)
-                .message("Messages fetched successfully")
-                .data(messages)
-                .build();
-        return ResponseEntity.ok(resp);
-    }
+//    @GetMapping("/{channelId}/messages")
+//    public ResponseEntity<SuccessResponse<List<MessageResponseDTO>>> getChannelMessages(
+//            @PathVariable Long channelId) {
+//        List<MessageResponseDTO> messages = messageService.getChannelMessages(channelId);
+//        SuccessResponse<List<MessageResponseDTO>> resp = SuccessResponse.<List<MessageResponseDTO>>builder()
+//                .code(HttpStatus.OK.value())
+//                .status(HttpStatus.OK)
+//                .message("Messages fetched successfully")
+//                .data(messages)
+//                .build();
+//        return ResponseEntity.ok(resp);
+//    }
 
     @PostMapping("/messages")
     public ResponseEntity<SuccessResponse<Void>> createChannelMessage(
@@ -63,26 +63,42 @@ public class MessageController {
 //        return ResponseEntity.ok(resp);
 //    }
 
-    @GetMapping("/messages/{messageId}")
-    public ResponseEntity<SuccessResponse<MessageResponseDTO>> getMessage(
+    @GetMapping("/get-messages")
+    public ResponseEntity<SuccessResponse<List<MessageResponseDTO>>> getMessages(
             @RequestParam(required = false) Long channelId,
-            @PathVariable Long messageId) {
+            @RequestParam(required = false) Long recipientId) {
 
-        MessageResponseDTO responseDto = messageService.getMessage(channelId, messageId);
-
-        String successMessage = channelId != null ?
-                "Channel message fetched successfully" :
-                "Direct message fetched successfully";
-
-        SuccessResponse<MessageResponseDTO> resp = SuccessResponse.<MessageResponseDTO>builder()
+        List<MessageResponseDTO> messages = messageService.getMessages(channelId, recipientId);
+        SuccessResponse<List<MessageResponseDTO>> resp = SuccessResponse.<List<MessageResponseDTO>>builder()
                 .code(HttpStatus.OK.value())
                 .status(HttpStatus.OK)
-                .message(successMessage)
-                .data(responseDto)
+                .message("Messages fetched successfully")
+                .data(messages)
                 .build();
-
         return ResponseEntity.ok(resp);
     }
+
+
+//    @GetMapping("/messages/{messageId}")
+//    public ResponseEntity<SuccessResponse<MessageResponseDTO>> getMessage(
+//            @RequestParam(required = false) Long channelId,
+//            @PathVariable Long messageId) {
+//
+//        MessageResponseDTO responseDto = messageService.getMessage(channelId, messageId);
+//
+//        String successMessage = channelId != null ?
+//                "Channel message fetched successfully" :
+//                "Direct message fetched successfully";
+//
+//        SuccessResponse<MessageResponseDTO> resp = SuccessResponse.<MessageResponseDTO>builder()
+//                .code(HttpStatus.OK.value())
+//                .status(HttpStatus.OK)
+//                .message(successMessage)
+//                .data(responseDto)
+//                .build();
+//
+//        return ResponseEntity.ok(resp);
+//    }
     @PutMapping("/{channelId}/messages/{messageId}")
     public ResponseEntity<SuccessResponse<Void>> updateChannelMessage(
             @PathVariable Long channelId,

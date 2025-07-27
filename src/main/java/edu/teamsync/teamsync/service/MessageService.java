@@ -36,17 +36,17 @@ public class MessageService {
     @Autowired
     private MessageMapper messageMapper;
 
-    public List<MessageResponseDTO> getChannelMessages(Long channelId) {
-        // Validate channel exists
-        if (!channelRepository.existsById(channelId)) {
-            throw new NotFoundException("Channel with ID " + channelId + " not found");
-        }
-
-        List<Messages> messages = messageRepository.findByChannelIdOrderByTimestampAsc(channelId);
-        return messages.stream()
-                .map(messageMapper::toDto)
-                .collect(Collectors.toList());
-    }
+//    public List<MessageResponseDTO> getChannelMessages(Long channelId) {
+//        // Validate channel exists
+//        if (!channelRepository.existsById(channelId)) {
+//            throw new NotFoundException("Channel with ID " + channelId + " not found");
+//        }
+//
+//        List<Messages> messages = messageRepository.findByChannelIdOrderByTimestampAsc(channelId);
+//        return messages.stream()
+//                .map(messageMapper::toDto)
+//                .collect(Collectors.toList());
+//    }
     @Transactional
     public void createChannelMessage(MessageCreationDTO requestDto) {
         // Validate channel exists
@@ -102,31 +102,31 @@ public class MessageService {
 //
 //        return messageMapper.toDto(message);
 //    }
-    public MessageResponseDTO getMessage(Long channelId, Long messageId) {
-        if (channelId != null) {
-            // Handle channel message
-            // Validate channel exists
-            if (!channelRepository.existsById(channelId)) {
-                throw new NotFoundException("Channel with ID " + channelId + " not found");
-            }
-
-            // Find message by ID and channel ID
-            Messages message = messageRepository.findByIdAndChannelId(messageId, channelId)
-                    .orElseThrow(() -> new NotFoundException("Message with ID " + messageId + " not found in channel " + channelId));
-
-            return messageMapper.toDto(message);
-        } else {
-            // Handle direct message
-            Messages message = messageRepository.findById(messageId)
-                    .orElseThrow(() -> new NotFoundException("Direct message with ID " + messageId + " not found"));
-
-            if (message.getChannel()!= null) {
-                throw new IllegalArgumentException("Message with ID " + messageId + " is not a direct message. Please provide channelId parameter.");
-            }
-
-            return messageMapper.toDto(message);
-        }
-    }
+//    public MessageResponseDTO getMessage(Long channelId, Long messageId) {
+//        if (channelId != null) {
+//            // Handle channel message
+//            // Validate channel exists
+//            if (!channelRepository.existsById(channelId)) {
+//                throw new NotFoundException("Channel with ID " + channelId + " not found");
+//            }
+//
+//            // Find message by ID and channel ID
+//            Messages message = messageRepository.findByIdAndChannelId(messageId, channelId)
+//                    .orElseThrow(() -> new NotFoundException("Message with ID " + messageId + " not found in channel " + channelId));
+//
+//            return messageMapper.toDto(message);
+//        } else {
+//            // Handle direct message
+//            Messages message = messageRepository.findById(messageId)
+//                    .orElseThrow(() -> new NotFoundException("Direct message with ID " + messageId + " not found"));
+//
+//            if (message.getChannel()!= null) {
+//                throw new IllegalArgumentException("Message with ID " + messageId + " is not a direct message. Please provide channelId parameter.");
+//            }
+//
+//            return messageMapper.toDto(message);
+//        }
+//    }
 
     @Transactional
     public void updateChannelMessage(Long channelId, Long messageId, MessageUpdateDTO requestDto,String userEmail) {
@@ -174,4 +174,57 @@ public class MessageService {
 
         messageRepository.delete(message);
     }
+
+    public List<MessageResponseDTO> getMessages(Long channelId, Long recipientId) {
+        // Validate that exactly one parameter is provided
+        if ((channelId == null && recipientId == null) || (channelId != null && recipientId != null)) {
+            throw new IllegalArgumentException("Either channelId or recipientId must be provided, but not both");
+        }
+
+        // Get current authenticated user
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userEmail = authentication.getName();
+        Users sender = userRepository.findByEmail(userEmail);
+
+        if (sender == null) {
+            throw new NotFoundException("Current user not found");
+        }
+
+        List<Messages> messages;
+
+        if (channelId != null) {
+            // Handle channel messages
+            messages = getChannelMessages(channelId);
+        } else {
+            // Handle direct messages between sender and recipient
+            messages = getDirectMessages(sender.getId(), recipientId);
+        }
+
+        return messages.stream()
+                .map(messageMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    // Helper method for channel messages
+    private List<Messages> getChannelMessages(Long channelId) {
+        // Validate channel exists
+        if (!channelRepository.existsById(channelId)) {
+            throw new NotFoundException("Channel with ID " + channelId + " not found");
+        }
+
+        return messageRepository.findByChannelIdOrderByTimestampAsc(channelId);
+    }
+
+    // Helper method for direct messages
+    private List<Messages> getDirectMessages(Long senderId, Long recipientId) {
+        // Validate recipient exists
+        if (!userRepository.existsById(recipientId)) {
+            throw new NotFoundException("Recipient with ID " + recipientId + " not found");
+        }
+
+        // Find all direct messages between sender and recipient (both directions)
+        // Assuming you have a method to find direct messages between two users
+        return messageRepository.findDirectMessagesBetweenUsers(senderId, recipientId);
+    }
+
 }
