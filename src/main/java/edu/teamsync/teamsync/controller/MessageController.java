@@ -17,29 +17,16 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/channels")
+@RequestMapping("/messages")
 @RequiredArgsConstructor
 public class MessageController {
 
     private final MessageService messageService;
 
-//    @GetMapping("/{channelId}/messages")
-//    public ResponseEntity<SuccessResponse<List<MessageResponseDTO>>> getChannelMessages(
-//            @PathVariable Long channelId) {
-//        List<MessageResponseDTO> messages = messageService.getChannelMessages(channelId);
-//        SuccessResponse<List<MessageResponseDTO>> resp = SuccessResponse.<List<MessageResponseDTO>>builder()
-//                .code(HttpStatus.OK.value())
-//                .status(HttpStatus.OK)
-//                .message("Messages fetched successfully")
-//                .data(messages)
-//                .build();
-//        return ResponseEntity.ok(resp);
-//    }
-
-    @PostMapping("/messages")
+    @PostMapping()
     public ResponseEntity<SuccessResponse<Void>> createMessage(
             @Valid @RequestBody MessageCreationDTO requestDto) {
-        messageService.createChannelMessage(requestDto);
+        messageService.createMessage(requestDto);
         SuccessResponse<Void> resp = SuccessResponse.<Void>builder()
                 .code(HttpStatus.CREATED.value())
                 .status(HttpStatus.CREATED)
@@ -49,21 +36,7 @@ public class MessageController {
         return ResponseEntity.status(HttpStatus.CREATED).body(resp);
     }
 
-//    @GetMapping("/{channelId}/messages/{messageId}")
-//    public ResponseEntity<SuccessResponse<MessageResponseDTO>> getChannelMessage(
-//            @PathVariable Long channelId,
-//            @PathVariable Long messageId) {
-//        MessageResponseDTO responseDto = messageService.getChannelMessage(channelId, messageId);
-//        SuccessResponse<MessageResponseDTO> resp = SuccessResponse.<MessageResponseDTO>builder()
-//                .code(HttpStatus.OK.value())
-//                .status(HttpStatus.OK)
-//                .message("Message fetched successfully")
-//                .data(responseDto)
-//                .build();
-//        return ResponseEntity.ok(resp);
-//    }
-
-    @GetMapping("/get-messages")
+    @GetMapping()
     public ResponseEntity<SuccessResponse<List<MessageResponseDTO>>> getMessages(
             @RequestParam(required = false) Long channelId,
             @RequestParam(required = false) Long recipientId) {
@@ -78,35 +51,11 @@ public class MessageController {
         return ResponseEntity.ok(resp);
     }
 
-
-//    @GetMapping("/messages/{messageId}")
-//    public ResponseEntity<SuccessResponse<MessageResponseDTO>> getMessage(
-//            @RequestParam(required = false) Long channelId,
-//            @PathVariable Long messageId) {
-//
-//        MessageResponseDTO responseDto = messageService.getMessage(channelId, messageId);
-//
-//        String successMessage = channelId != null ?
-//                "Channel message fetched successfully" :
-//                "Direct message fetched successfully";
-//
-//        SuccessResponse<MessageResponseDTO> resp = SuccessResponse.<MessageResponseDTO>builder()
-//                .code(HttpStatus.OK.value())
-//                .status(HttpStatus.OK)
-//                .message(successMessage)
-//                .data(responseDto)
-//                .build();
-//
-//        return ResponseEntity.ok(resp);
-//    }
-    @PutMapping("/{channelId}/messages/{messageId}")
-    public ResponseEntity<SuccessResponse<Void>> updateChannelMessage(
-            @PathVariable Long channelId,
+    @PutMapping("/{messageId}")
+    public ResponseEntity<SuccessResponse<Void>> updateMessage(
             @PathVariable Long messageId,
             @Valid @RequestBody MessageUpdateDTO requestDto) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String userEmail = authentication.getName();
-       messageService.updateChannelMessage(channelId, messageId, requestDto,userEmail);
+       messageService.updateMessage(messageId, requestDto);
         SuccessResponse<Void> resp = SuccessResponse.<Void>builder()
                 .code(HttpStatus.OK.value())
                 .status(HttpStatus.OK)
@@ -116,11 +65,10 @@ public class MessageController {
         return ResponseEntity.ok(resp);
     }
 
-    @DeleteMapping("/{channelId}/messages/{messageId}")
-    public ResponseEntity<SuccessResponse<Void>> deleteChannelMessage(
-            @PathVariable Long channelId,
+    @DeleteMapping("/{messageId}")
+    public ResponseEntity<SuccessResponse<Void>> deleteMessage(
             @PathVariable Long messageId) {
-        messageService.deleteChannelMessage(channelId, messageId);
+        messageService.deleteMessage(messageId);
         SuccessResponse<Void> resp = SuccessResponse.<Void>builder()
                 .code(HttpStatus.NO_CONTENT.value())
                 .status(HttpStatus.OK)

@@ -5,7 +5,7 @@ meta {
 }
 
 put {
-  url: {{BASE_SERVER}}/channels/1/messages/100
+  url: {{BASE_SERVER}}/messages/101
   body: json
   auth: inherit
 }
@@ -16,8 +16,6 @@ headers {
 
 body:json {
   {
-    "channel_id": 1,
-    "recipient_id": null,
-    "content": "Update module"
+    "content": "Updated module"
   }
 }

@@ -5,13 +5,13 @@ meta {
 }
 
 get {
-  url: {{BASE_SERVER}}/channels/get-messages?channelId=1
+  url: {{BASE_SERVER}}/messages?channelId=3
   body: none
   auth: inherit
 }
 
 params:query {
-  channelId: 1
+  channelId: 3
 }
 
 headers {
@@ -29,10 +29,10 @@ docs {
   Important: Exactly one of channelId or recipientId must be provided, but not both.
   
   1. Get Channel Messages:
-  GET  /channels/get-messages?channelId=1
+  GET  /messages?channelId=1
   Authorization: Bearer your-jwt-token
   
   2.  Get Direct Messages:
-  GET /channels/get-messages?recipientId=3
+  GET /messages?recipientId=3
   Authorization: Bearer your-jwt-token
 }
