@@ -176,9 +176,8 @@ public class TaskController {
     }
 
     @PostMapping
+    @PreAuthorize("@projectAuthorizationService.isProjectAdminOrOwner(#createDto.projectId)")
     public ResponseEntity<SuccessResponse<Void>> createTask(@Valid @RequestBody TaskCreationDTO createDto) {
-        // Check if user is admin/owner of the project before creating task
-        authorizationService.requireProjectAdminOrOwner(createDto.getProjectId());
 
         tasksService.createTask(createDto);
 
@@ -193,10 +192,6 @@ public class TaskController {
 
     @PutMapping("/{id}")
     public ResponseEntity<SuccessResponse<Void>> updateTask(@PathVariable Long id, @Valid @RequestBody TaskUpdateDTO updateDto) {
-        // Get task to find its project ID, then check authorization
-//        TaskResponseDTO task = tasksService.getTaskById(id);
-//        authorizationService.requireProjectAdminOrOwner(task.getProjectId());
-
         tasksService.updateTask(id, updateDto);
 
         SuccessResponse<Void> response = SuccessResponse.<Void>builder()
@@ -209,10 +204,8 @@ public class TaskController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@projectAuthorizationService.canManageTask(#id)")
     public ResponseEntity<SuccessResponse<Void>> deleteTask(@PathVariable Long id) {
-        // Get task to find its project ID, then check authorization
-        TaskResponseDTO task = tasksService.getTaskById(id);
-        authorizationService.requireProjectAdminOrOwner(task.getProjectId());
 
         tasksService.deleteTask(id);
 

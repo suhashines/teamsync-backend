@@ -2,11 +2,13 @@ package edu.teamsync.teamsync.authorization;
 
 import edu.teamsync.teamsync.entity.ProjectMembers;
 import edu.teamsync.teamsync.entity.Projects;
+import edu.teamsync.teamsync.entity.Tasks;
 import edu.teamsync.teamsync.entity.Users;
 import edu.teamsync.teamsync.exception.http.NotFoundException;
 import edu.teamsync.teamsync.exception.http.UnauthorizedException;
 import edu.teamsync.teamsync.repository.ProjectMemberRepository;
 import edu.teamsync.teamsync.repository.ProjectRepository;
+import edu.teamsync.teamsync.repository.TaskRepository;
 import edu.teamsync.teamsync.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -22,6 +24,7 @@ public class ProjectAuthorizationService {
     private final ProjectRepository projectsRepository;
     private final ProjectMemberRepository projectMembersRepository;
     private final UserRepository usersRepository;
+    private final TaskRepository taskRepository;
 
     /**
      * Check if the current user is admin or owner of the project
@@ -29,6 +32,19 @@ public class ProjectAuthorizationService {
     public boolean isProjectAdminOrOwner(Long projectId) {
         String userEmail = getCurrentUserEmail();
         return hasAdminOrOwnerRole(projectId, userEmail);
+    }
+
+    public boolean canManageTask(Long taskId) {
+        // Get the task's project ID directly from repository
+        Optional<Tasks> taskOpt = taskRepository.findById(taskId);
+        if (taskOpt.isEmpty()) {
+            throw new NotFoundException("Task not found with id: " + taskId);
+        }
+
+        Tasks task = taskOpt.get();
+        Long projectId = task.getProject().getId(); // Assuming task has project relationship
+
+        return isProjectAdminOrOwner(projectId);
     }
 
     /**
