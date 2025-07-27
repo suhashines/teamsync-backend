@@ -9,6 +9,7 @@ import edu.teamsync.teamsync.entity.Users;
 import edu.teamsync.teamsync.entity.ProjectMembers;
 import edu.teamsync.teamsync.entity.Projects;
 import edu.teamsync.teamsync.exception.http.NotFoundException;
+import edu.teamsync.teamsync.exception.http.UnauthorizedException;
 import edu.teamsync.teamsync.mapper.UserMapper;
 import edu.teamsync.teamsync.mapper.ProjectMapper;
 import edu.teamsync.teamsync.repository.UserRepository;
@@ -131,6 +132,10 @@ public class UserService {
         Users user = userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + id));
 
+        if ("manager".equalsIgnoreCase(user.getDesignation())) {
+            throw new UnauthorizedException("Cannot update designation for a manager user.");
+        }
+        
         user.setDesignation(dto.getDesignation());
         userRepository.save(user);
         return userMapper.toResponseDTO(user);
