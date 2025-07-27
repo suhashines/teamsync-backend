@@ -1,12 +1,21 @@
 package edu.teamsync.teamsync.service;
-
+import java.util.stream.Collectors;
+import edu.teamsync.teamsync.dto.userDTO.DesignationUpdateDto;
 import edu.teamsync.teamsync.dto.userDTO.UserCreationDTO;
 import edu.teamsync.teamsync.dto.userDTO.UserResponseDTO;
 import edu.teamsync.teamsync.dto.userDTO.UserUpdateDTO;
+import edu.teamsync.teamsync.dto.userDTO.UserProjectDTO;
 import edu.teamsync.teamsync.entity.Users;
+import edu.teamsync.teamsync.entity.ProjectMembers;
+import edu.teamsync.teamsync.entity.Projects;
 import edu.teamsync.teamsync.exception.http.NotFoundException;
 import edu.teamsync.teamsync.mapper.UserMapper;
+import edu.teamsync.teamsync.mapper.ProjectMapper;
 import edu.teamsync.teamsync.repository.UserRepository;
+import edu.teamsync.teamsync.repository.ProjectMemberRepository;
+import edu.teamsync.teamsync.repository.ProjectRepository;
+import edu.teamsync.teamsync.dto.projectDTO.ProjectDTO;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,7 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 @Slf4j
 @Service
@@ -28,6 +37,9 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final ProjectMemberRepository projectMemberRepository;
+    private final ProjectRepository projectRepository;
+    private final ProjectMapper projectMapper;
 
     public void createUser(UserCreationDTO userDto) {
         if (userDto == null) {
@@ -112,5 +124,59 @@ public class UserService {
             throw new NotFoundException("User not found with email: " + email);
         }
         return user ;
+    }
+
+    public UserResponseDTO updateDesignation(Long id, DesignationUpdateDto dto) {
+     
+        Users user = userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + id));
+
+        user.setDesignation(dto.getDesignation());
+        userRepository.save(user);
+        return userMapper.toResponseDTO(user);
+    }
+
+    /**
+     * Check if the current authenticated user has manager designation
+     * @return true if current user has manager designation, false otherwise
+     */
+    public boolean isCurrentUserManager() {
+        Users currentUser = getCurrentUser();
+        return "manager".equalsIgnoreCase(currentUser.getDesignation());
+    }
+
+    /**
+     * Get the designation of the current authenticated user
+     * @return the designation of the current user, or null if not set
+     */
+    public String getCurrentUserDesignation() {
+        Users currentUser = getCurrentUser();
+        return currentUser.getDesignation();
+    }
+
+    /**
+     * Get all projects that the current user is a member of
+     * @return List of UserProjectDTO containing project details and user's role
+     */
+    public List<UserProjectDTO> getCurrentUserProjects() {
+        Users currentUser = getCurrentUser();
+        
+        // Get all project memberships for the current user
+        List<ProjectMembers> userMemberships = projectMemberRepository.findByUserId(currentUser.getId());
+        
+        List<UserProjectDTO> userProjects = userMemberships.stream()
+            .map(membership -> {
+                Projects project = membership.getProject();
+                ProjectDTO projectDTO = projectMapper.toDto(project);
+
+                return UserProjectDTO.builder()
+                        .project(projectDTO)
+                        .userRole(membership.getRole().name())
+                        .build();
+            })
+            .collect(Collectors.toList());
+        
+        
+        return userProjects;
     }
 }

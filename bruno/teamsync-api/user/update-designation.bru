@@ -1,0 +1,21 @@
+meta {
+  name: update-designation
+  type: http
+  seq: 7
+}
+
+put {
+  url: {{BASE_SERVER}}/users/designation/2
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "designation":"manager"
+  }
+}
+
+settings {
+  encodeUrl: true
+}
