@@ -6,10 +6,12 @@ import edu.teamsync.teamsync.response.SuccessResponse;
 import edu.teamsync.teamsync.service.FeedPostService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
 import java.util.List;
@@ -41,17 +43,19 @@ public class FeedPostController {
         return ResponseEntity.ok(resp);
     }
 
-    @PostMapping
-    public ResponseEntity<SuccessResponse<Void>> createFeedPost(
-            @Valid @RequestBody FeedPostCreateRequest request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String userEmail = authentication.getName();
-        feedPostsService.createFeedPost(request, userEmail);
-        SuccessResponse<Void> resp = SuccessResponse.<Void>builder()
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<SuccessResponse<FeedPostResponseDTO>> createFeedPost(
+            @Valid @RequestPart("feedPost") FeedPostCreateRequest request,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files) {
+
+
+        FeedPostResponseDTO createdPost = feedPostsService.createFeedPost(request, files);
+
+        SuccessResponse<FeedPostResponseDTO> resp = SuccessResponse.<FeedPostResponseDTO>builder()
                 .code(HttpStatus.CREATED.value())
                 .status(HttpStatus.CREATED)
                 .message("Feed post created successfully")
-//                .data(createdPost)
+                .data(createdPost)
                 .build();
         return ResponseEntity.status(HttpStatus.CREATED).body(resp);
     }

@@ -18,8 +18,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 @Service
@@ -27,11 +32,15 @@ import java.util.List;
 @Transactional
 public class FeedPostService {
 
+    private static final Logger logger = LoggerFactory.getLogger(FeedPostService.class);
+
     private final FeedPostRepository feedPostsRepository;
     private final UserRepository usersRepository;
     private final FeedPostMapper feedPostMapper;
     private final ReactionMapper reactionMapper;
     private final ReactionRepository reactionsRepository;
+    private final AzureStorageService azureStorageService;
+    private final UserService userService;
 
     public List<FeedPostResponseDTO> getAllFeedPosts() {
         List<FeedPosts> feedPosts = feedPostsRepository.findAll();
@@ -113,17 +122,25 @@ public class FeedPostService {
         return "createdAt";
     }
 
-    public void createFeedPost(FeedPostCreateRequest request,String userEmail) {
-        Users currentUser = usersRepository.findByEmail(userEmail);
-        if (currentUser == null) {
-            throw new NotFoundException("User not found with email "+userEmail);
+    public FeedPostResponseDTO createFeedPost(FeedPostCreateRequest request, List<MultipartFile> files) {
+
+        Users currentUser = userService.getCurrentUser();
+
+        // Upload files and get URLs if files are provided
+        if (files != null && !files.isEmpty()) {
+            List<String> uploadedUrls = files.stream()
+                    .filter(file -> file != null && !file.isEmpty())
+                    .map(azureStorageService::uploadFile)
+                    .collect(Collectors.toList());
+            
+            // Set the uploaded URLs to the request
+            request.setMediaUrls(uploadedUrls.toArray(new String[0]));
         }
 
         FeedPosts feedPost = feedPostMapper.toEntity(request);
         feedPost.setAuthor(currentUser); // Set author manually
 
-        feedPostsRepository.save(feedPost);
-//        return feedPostMapper.toResponse(savedPost);
+       return feedPostMapper.toResponse(feedPostsRepository.save(feedPost));
     }
 
     public FeedPostWithReactionDTO getFeedPostById(Long id) {
@@ -153,8 +170,19 @@ public class FeedPostService {
     }
 
     public void deleteFeedPost(Long id) {
-        if (!feedPostsRepository.existsById(id)) {
-            throw new NotFoundException("FeedPost not found with id: " + id);
+        // Get the feed post first to access its media URLs
+        FeedPosts feedPost = feedPostsRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("FeedPost not found with id: " + id));
+
+        // Delete associated files from Azure Blob Storage if mediaUrls exist
+        if (feedPost.getMediaUrls() != null && feedPost.getMediaUrls().length > 0) {
+            try {
+                int deletedFilesCount = azureStorageService.deleteFilesByUrls(feedPost.getMediaUrls());
+                logger.info("Deleted {} files from Azure Blob Storage for feed post: {}", deletedFilesCount, id);
+            } catch (Exception e) {
+                // Log the error but continue with deletion to avoid blocking the operation
+                logger.error("Failed to delete files from Azure Blob Storage for feed post: {} - {}", id, e.getMessage(), e);
+            }
         }
 
         // Delete associated reactions first
@@ -163,6 +191,7 @@ public class FeedPostService {
         // Delete the feed post
         feedPostsRepository.deleteById(id);
     }
+    
 
     private void updateReactions(FeedPosts feedPost, List<ReactionDetailDTO> newReactions) {
         // Remove existing reactions for this post
