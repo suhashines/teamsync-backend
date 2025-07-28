@@ -1,0 +1,15 @@
+meta {
+  name: update-task-status
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{BASE_SERVER}}/tasks/status/id
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

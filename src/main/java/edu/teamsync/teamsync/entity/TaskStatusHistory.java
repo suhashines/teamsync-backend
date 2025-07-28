@@ -27,6 +27,7 @@ public class TaskStatusHistory {
     @Column(nullable = false)
     private Tasks.TaskStatus status;
 
+
     @ManyToOne
     @JoinColumn(name = "changed_by", nullable = false)
     private Users changedBy;
