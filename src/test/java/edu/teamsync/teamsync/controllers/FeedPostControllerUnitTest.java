@@ -3,6 +3,7 @@ package edu.teamsync.teamsync.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.teamsync.teamsync.controller.FeedPostController;
 import edu.teamsync.teamsync.dto.feedPostDTO.FeedPostCreateRequest;
+import edu.teamsync.teamsync.dto.feedPostDTO.FeedPostPaginationResponseDTO;
 import edu.teamsync.teamsync.dto.feedPostDTO.FeedPostResponseDTO;
 import edu.teamsync.teamsync.dto.feedPostDTO.FeedPostUpdateRequest;
 import edu.teamsync.teamsync.dto.feedPostDTO.FeedPostWithReactionDTO;

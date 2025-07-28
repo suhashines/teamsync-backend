@@ -22,13 +22,21 @@ public class FeedPostController {
     private final FeedPostService feedPostsService;
 
     @GetMapping
-    public ResponseEntity<SuccessResponse<List<FeedPostResponseDTO>>> getAllFeedPosts() {
-        List<FeedPostResponseDTO> feedPosts = feedPostsService.getAllFeedPosts();
-        SuccessResponse<List<FeedPostResponseDTO>> resp = SuccessResponse.<List<FeedPostResponseDTO>>builder()
+    public ResponseEntity<SuccessResponse<FeedPostPaginationResponseDTO>> getAllFeedPosts(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String order,
+            @RequestParam(required = false, defaultValue = "text") String type) {
+        
+        FeedPostPaginationResponseDTO paginatedResponse = feedPostsService.getAllFeedPostsWithPagination(
+                page, limit, sortBy, order, type);
+        
+        SuccessResponse<FeedPostPaginationResponseDTO> resp = SuccessResponse.<FeedPostPaginationResponseDTO>builder()
                 .code(HttpStatus.OK.value())
                 .status(HttpStatus.OK)
                 .message("Feed posts fetched successfully")
-                .data(feedPosts)
+                .data(paginatedResponse)
                 .build();
         return ResponseEntity.ok(resp);
     }

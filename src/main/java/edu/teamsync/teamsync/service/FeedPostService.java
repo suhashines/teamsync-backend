@@ -12,6 +12,10 @@ import edu.teamsync.teamsync.repository.FeedPostRepository;
 import edu.teamsync.teamsync.repository.ReactionRepository;
 import edu.teamsync.teamsync.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.ZonedDateTime;
@@ -32,6 +36,81 @@ public class FeedPostService {
     public List<FeedPostResponseDTO> getAllFeedPosts() {
         List<FeedPosts> feedPosts = feedPostsRepository.findAll();
         return feedPostMapper.toResponseList(feedPosts);
+    }
+
+    public FeedPostPaginationResponseDTO getAllFeedPostsWithPagination(
+            int page, 
+            int limit, 
+            String sortBy, 
+            String order, 
+            String type) {
+        
+        // Validate and set defaults
+        page = Math.max(0, page - 1); // Convert to 0-based indexing
+        limit = Math.max(1, Math.min(100, limit)); // Ensure limit is between 1 and 100
+        
+        // Validate sortBy field
+        String validSortBy = validateSortBy(sortBy);
+        
+        // Validate order
+        Sort.Direction sortDirection = "asc".equalsIgnoreCase(order) ? 
+            Sort.Direction.ASC : Sort.Direction.DESC;
+        
+        // Create pageable
+        Pageable pageable = PageRequest.of(page, limit, Sort.by(sortDirection, validSortBy));
+        
+        // Convert type string to enum if provided
+        FeedPosts.FeedPostType feedPostType = null;
+        if (type != null && !type.trim().isEmpty()) {
+            try {
+                feedPostType = FeedPosts.FeedPostType.valueOf(type.toLowerCase());
+            } catch (IllegalArgumentException e) {
+                // If invalid type provided, ignore the filter
+                feedPostType = null;
+            }
+        }
+        
+        // Get paginated results
+        Page<FeedPosts> feedPostsPage = feedPostsRepository.findAllWithPaginationAndFilter(feedPostType, pageable);
+        
+        // Convert to DTOs
+        List<FeedPostResponseDTO> feedPostDTOs = feedPostMapper.toResponseList(feedPostsPage.getContent());
+        
+        // Build pagination metadata
+        FeedPostPaginationResponseDTO.PaginationMetadata metadata = FeedPostPaginationResponseDTO.PaginationMetadata.builder()
+                .currentPage(page + 1) // Convert back to 1-based indexing
+                .totalPages(feedPostsPage.getTotalPages())
+                .totalElements(feedPostsPage.getTotalElements())
+                .pageSize(limit)
+                .hasNext(feedPostsPage.hasNext())
+                .hasPrevious(feedPostsPage.hasPrevious())
+                .sortBy(validSortBy)
+                .sortOrder(order.toLowerCase())
+                .filterType(type != null ? type.toLowerCase() : null)
+                .build();
+        
+        return FeedPostPaginationResponseDTO.builder()
+                .data(feedPostDTOs)
+                .metadata(metadata)
+                .build();
+    }
+
+    private String validateSortBy(String sortBy) {
+        if (sortBy == null || sortBy.trim().isEmpty()) {
+            return "createdAt";
+        }
+        
+        // List of valid sort fields
+        String[] validFields = {"id", "type", "content", "createdAt", "eventDate", "isAiGenerated"};
+        
+        for (String field : validFields) {
+            if (field.equalsIgnoreCase(sortBy)) {
+                return field;
+            }
+        }
+        
+        // If invalid field provided, default to createdAt
+        return "createdAt";
     }
 
     public void createFeedPost(FeedPostCreateRequest request,String userEmail) {
