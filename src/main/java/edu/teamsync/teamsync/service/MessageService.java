@@ -137,9 +137,11 @@ public class MessageService {
         for (FileCreationDTO fileDto : requestDto.files()) {
             String fileUrl = azureStorageService.uploadFile(fileDto.file());
             String fileType = fileDto.getFileType();
+
+            String originalFileName = fileDto.file().getOriginalFilename();
             
             Messages message = Messages.builder()
-                    .content("")
+                    .content(originalFileName)
                     .sender(sender)
                     .channel(channel)
                     .recipient(recipient)
