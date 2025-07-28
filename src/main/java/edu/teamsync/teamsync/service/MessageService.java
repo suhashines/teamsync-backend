@@ -22,9 +22,13 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class MessageService {
+
+    private static final Logger logger = LoggerFactory.getLogger(MessageService.class);
 
     @Autowired
     private MessageRepository messageRepository;
@@ -215,6 +219,17 @@ public class MessageService {
         // Validate message exists in the channel
         Messages message = messageRepository.findByIdAndChannelId(messageId, channelId)
                 .orElseThrow(() -> new NotFoundException("Message with ID " + messageId + " not found in channel " + channelId));
+
+        // Delete associated file from Azure Blob Storage if fileUrl exists
+        if (message.getFileUrl() != null && !message.getFileUrl().trim().isEmpty()) {
+            try {
+                int deletedFilesCount = azureStorageService.deleteFilesByUrls(new String[]{message.getFileUrl()});
+                logger.info("Deleted {} files from Azure Blob Storage for message: {} in channel: {}", deletedFilesCount, messageId, channelId);
+            } catch (Exception e) {
+                // Log the error but continue with deletion to avoid blocking the operation
+                logger.error("Failed to delete file from Azure Blob Storage for message: {} in channel: {} - {}", messageId, channelId, e.getMessage(), e);
+            }
+        }
 
         messageRepository.delete(message);
     }

@@ -6,7 +6,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Type;
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -31,7 +30,8 @@ public class FeedPosts {
     private Users author;
 
     @Column(nullable = false)
-    private String content;
+    @Builder.Default
+    private String content = "";  
 
     // Use PostgreSQL array type directly
     @Column(name = "poll_options", columnDefinition = "text[]")

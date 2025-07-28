@@ -27,7 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.ArrayList;
+
 
 @Slf4j
 @Service
@@ -39,7 +39,6 @@ public class UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final ProjectMemberRepository projectMemberRepository;
-    private final ProjectRepository projectRepository;
     private final ProjectMapper projectMapper;
 
     public void createUser(UserCreationDTO userDto) {
@@ -135,7 +134,7 @@ public class UserService {
         if ("manager".equalsIgnoreCase(user.getDesignation())) {
             throw new UnauthorizedException("Cannot update designation for a manager user.");
         }
-        
+
         user.setDesignation(dto.getDesignation());
         userRepository.save(user);
         return userMapper.toResponseDTO(user);

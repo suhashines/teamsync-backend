@@ -1,19 +1,25 @@
 package edu.teamsync.teamsync.service;
+import edu.teamsync.teamsync.authorization.ProjectAuthorizationService;
 import edu.teamsync.teamsync.dto.taskDTO.TaskCreationDTO;
 import edu.teamsync.teamsync.dto.taskDTO.TaskResponseDTO;
+import edu.teamsync.teamsync.dto.taskDTO.TaskStatusHistoryDTO;
 import edu.teamsync.teamsync.dto.taskDTO.TaskUpdateDTO;
 import edu.teamsync.teamsync.entity.Tasks;
 import edu.teamsync.teamsync.entity.TaskStatusHistory;
 import edu.teamsync.teamsync.entity.Projects;
 import edu.teamsync.teamsync.entity.Users;
 import edu.teamsync.teamsync.exception.http.NotFoundException;
+import edu.teamsync.teamsync.exception.http.UnauthorizedException;
 import edu.teamsync.teamsync.mapper.TaskMapper;
 import edu.teamsync.teamsync.mapper.TaskStatusHistoryMapper;
 import edu.teamsync.teamsync.repository.ProjectRepository;
 import edu.teamsync.teamsync.repository.TaskRepository;
 import edu.teamsync.teamsync.repository.TaskStatusHistoryRepository;
 import edu.teamsync.teamsync.repository.UserRepository;
+import edu.teamsync.teamsync.response.SuccessResponse;
 import lombok.RequiredArgsConstructor;
+
+import org.apache.coyote.BadRequestException;
 import org.springframework.scheduling.config.Task;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,6 +40,8 @@ public class TaskService {
     private final UserRepository usersRepository;
     private final TaskMapper taskMapper;
     private final TaskStatusHistoryMapper statusHistoryMapper;
+    private final UserService userService;
+    private final ProjectAuthorizationService projectAuthorizationService;
 
     public TaskResponseDTO getTaskById(Long id) {
         if (id == null) {
@@ -308,5 +315,60 @@ public class TaskService {
         dto.setStatusHistory(statusHistoryMapper.toDtoList(statusHistoryList));
 
         return dto;
+    }
+
+    /*checks if all the children of a task has their status as completed or not
+     * @param task the task to check
+     * @param incompleteChildren the list of incomplete children
+     * @return true if all the children of a task has their status as completed, false otherwise
+    */
+    private boolean hasAllChildrenCompleted(Long parentTaskId){
+
+        List<Tasks> children = tasksRepository.findSubtasksByParentTaskId(parentTaskId);
+
+        for(Tasks child:children){
+            if(!child.getStatus().equals(Tasks.TaskStatus.completed)){
+               return false;
+            }
+        }
+        return true ;
+    }
+
+    public SuccessResponse<TaskResponseDTO> updateTaskStatus(Long taskId,TaskStatusHistoryDTO dto){
+
+        Tasks task = tasksRepository.findById(taskId)
+        .orElseThrow(() -> new NotFoundException("Task not found with id: " + taskId));
+
+
+        if(Tasks.TaskStatus.valueOf(dto.getStatus()).equals(Tasks.TaskStatus.completed) && !projectAuthorizationService.canManageTask(taskId)
+        ){
+            throw new UnauthorizedException("You are not authorized to update the status as completed");
+        }
+
+        if(Tasks.TaskStatus.valueOf(dto.getStatus()).equals(Tasks.TaskStatus.completed) && !hasAllChildrenCompleted(taskId)){
+            throw new IllegalArgumentException("All the children of the task must be completed before updating the status to completed");
+        }
+
+        if(task.getStatus().equals(Tasks.TaskStatus.completed) && !projectAuthorizationService.canManageTask(taskId)){
+            throw new UnauthorizedException("You are not authorized to revert back a completed task");
+        }
+
+        task.setStatus(Tasks.TaskStatus.valueOf(dto.getStatus()));
+        tasksRepository.save(task);
+
+        TaskStatusHistory statusHistory = TaskStatusHistory.builder()
+        .task(task)
+        .status(task.getStatus())
+        .changedBy(userService.getCurrentUser())
+        .changedAt(ZonedDateTime.now())
+        .comment(dto.getComment())
+        .build();
+
+        taskStatusHistoryRepository.save(statusHistory);
+
+        return SuccessResponse.<TaskResponseDTO>builder()
+        .message("Task status updated successfully")
+        .data(taskMapper.toDto(task))
+        .build();
     }
 }

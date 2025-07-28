@@ -106,4 +106,68 @@ public class AzureStorageService {
                 blobName,
                 sasToken);
     }
+
+    /**
+     * Deletes multiple files from Azure Blob Storage by their URLs
+     * @param fileUrls Array of file URLs to delete
+     * @return Number of files successfully deleted
+     */
+    public int deleteFilesByUrls(String[] fileUrls) {
+        if (fileUrls == null || fileUrls.length == 0) {
+            return 0;
+        }
+
+        int deletedCount = 0;
+        BlobContainerClient containerClient = blobServiceClient
+                .getBlobContainerClient(azureStorageConfig.getContainerName());
+
+        for (String fileUrl : fileUrls) {
+            try {
+                if (fileUrl != null && !fileUrl.trim().isEmpty()) {
+                    String blobName = extractBlobNameFromUrl(fileUrl);
+                    if (blobName != null) {
+                        BlobClient blobClient = containerClient.getBlobClient(blobName);
+                        if (blobClient.exists()) {
+                            blobClient.delete();
+                            deletedCount++;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // Log the error but continue with other files
+                System.err.println("Failed to delete file: " + fileUrl + " - " + e.getMessage());
+            }
+        }
+
+        return deletedCount;
+    }
+
+    /**
+     * Extracts the blob name from a complete Azure Blob Storage URL
+     * @param fileUrl Complete URL of the file in Azure Blob Storage
+     * @return Blob name or null if URL format is invalid
+     */
+    private String extractBlobNameFromUrl(String fileUrl) {
+        try {
+            // Expected URL format: https://{account}.blob.core.windows.net/{container}/{blobName}?{sasToken}
+            String[] urlParts = fileUrl.split("/");
+            
+            // Find the container name and blob name
+            for (int i = 0; i < urlParts.length; i++) {
+                if (urlParts[i].equals(azureStorageConfig.getContainerName()) && i + 1 < urlParts.length) {
+                    // The next part should be the blob name (before the query parameters)
+                    String blobNameWithParams = urlParts[i + 1];
+                    // Remove query parameters if present
+                    if (blobNameWithParams.contains("?")) {
+                        return blobNameWithParams.substring(0, blobNameWithParams.indexOf("?"));
+                    }
+                    return blobNameWithParams;
+                }
+            }
+            
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
 } 
