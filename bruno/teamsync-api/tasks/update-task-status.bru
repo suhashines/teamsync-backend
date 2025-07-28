@@ -5,9 +5,20 @@ meta {
 }
 
 put {
-  url: {{BASE_SERVER}}/tasks/status/id
-  body: none
+  url: {{BASE_SERVER}}/tasks/status/13
+  body: json
   auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{jwt}}
+}
+
+body:json {
+  {
+    "status":"backlog",
+    "comment":"dekhi to ekhon hoy kina"
+  }
 }
 
 settings {
