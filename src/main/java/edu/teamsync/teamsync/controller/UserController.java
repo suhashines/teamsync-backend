@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import edu.teamsync.teamsync.dto.userDTO.UserProjectDTO;
@@ -74,18 +76,18 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<SuccessResponse<Void>> updateUser(
-            @PathVariable Long id,
-            @Valid @RequestBody UserUpdateDTO userUpdateDTO) {
+    @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<SuccessResponse<UserResponseDTO>> updateUser(
+            @Valid @RequestPart("user") UserUpdateDTO userUpdateDTO,
+            @RequestPart(value = "file", required = false) MultipartFile file) {
 
-        userService.updateUser(id, userUpdateDTO);
+        UserResponseDTO updatedUser = userService.updateUser(userUpdateDTO, file);
 
-        SuccessResponse<Void> response = SuccessResponse.<Void>builder()
+        SuccessResponse<UserResponseDTO> response = SuccessResponse.<UserResponseDTO>builder()
                 .code(HttpStatus.OK.value())
                 .status(HttpStatus.OK)
+                .data(updatedUser)
                 .message("User updated successfully")
-//                .data(updatedUser)
                 .build();
 
         return ResponseEntity.ok(response);

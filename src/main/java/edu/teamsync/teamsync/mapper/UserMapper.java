@@ -33,6 +33,9 @@ public interface UserMapper {
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "predictedBurnoutRisk", ignore = true)
     @Mapping(target = "id", ignore = true)
+    @Mapping(target="designation",ignore=true)
+    @Mapping(target="joinDate",ignore=true)
+    @Mapping(target="profilePicture",ignore=true)
     void updateUserFromDTO(UserUpdateDTO userUpdateDTO, @MappingTarget Users user);
 
     UserUpdateDTO toUpdateDTO(Users user);

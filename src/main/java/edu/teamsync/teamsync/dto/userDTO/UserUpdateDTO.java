@@ -16,14 +16,7 @@ import java.time.LocalDate;
 public class UserUpdateDTO {
     @NotBlank(message = "Name is required")
     private String name;
-
-    @NotBlank(message = "Email is required")
-    @Email(message = "Email must be valid")
-    private String email;
-
-    private String profilePicture;
-    private String designation;
+    
     private LocalDate birthdate;
-    private LocalDate joinDate;
 }
 

@@ -13,6 +13,7 @@ import edu.teamsync.teamsync.exception.http.UnauthorizedException;
 import edu.teamsync.teamsync.mapper.UserMapper;
 import edu.teamsync.teamsync.mapper.ProjectMapper;
 import edu.teamsync.teamsync.repository.UserRepository;
+import jakarta.mail.Multipart;
 import edu.teamsync.teamsync.repository.ProjectMemberRepository;
 import edu.teamsync.teamsync.repository.ProjectRepository;
 import edu.teamsync.teamsync.dto.projectDTO.ProjectDTO;
@@ -25,6 +26,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -40,6 +42,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectMapper projectMapper;
+    private final AzureStorageService azureStorageService;
 
     public void createUser(UserCreationDTO userDto) {
         if (userDto == null) {
@@ -78,31 +81,26 @@ public class UserService {
         return userMapper.toResponseDTO(user);
     }
 
-    public void updateUser(Long id, UserUpdateDTO userUpdateDTO) {
-        if (id == null) {
-            throw new IllegalArgumentException("User ID cannot be null");
+    public UserResponseDTO updateUser(UserUpdateDTO userUpdateDTO,MultipartFile file) {
+
+        Users existingUser = getCurrentUser();
+
+        // Update the existing user with new values
+        existingUser.setName(userUpdateDTO.getName());
+        //only set birthdate if it is not null and not empty string
+        if (userUpdateDTO.getBirthdate() != null && !userUpdateDTO.getBirthdate().toString().isEmpty()) {
+            existingUser.setBirthdate(userUpdateDTO.getBirthdate());
+        }
+        //file type must be image
+        if(file != null && file.getContentType().startsWith("image/")){
+            String profilePictureUrl = azureStorageService.uploadFile(file);
+            existingUser.setProfilePicture(profilePictureUrl);
         }
 
-        if (userUpdateDTO == null) {
-            throw new IllegalArgumentException("Update data cannot be null");
-        }
+        Users updatedUser = userRepository.save(existingUser);
 
-        Users existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + id));
+        return userMapper.toResponseDTO(updatedUser);
 
-        // Check if email is being updated to an existing one
-        if (userUpdateDTO.getEmail() != null && !userUpdateDTO.getEmail().equals(existingUser.getEmail())) {
-            Users userWithEmail = userRepository.findByEmail(userUpdateDTO.getEmail());
-            if (userWithEmail != null && !userWithEmail.getId().equals(existingUser.getId())) {
-                throw new IllegalArgumentException("Email already exists: " + userUpdateDTO.getEmail());
-            }
-        }
-
-        // Update the entity with new values
-        userMapper.updateUserFromDTO(userUpdateDTO, existingUser);
-        userRepository.save(existingUser);
-
-//        return userMapper.toResponseDTO(updatedUser);
     }
 
     public void deleteUser(Long id) {
