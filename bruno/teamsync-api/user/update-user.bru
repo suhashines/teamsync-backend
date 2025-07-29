@@ -5,8 +5,8 @@ meta {
 }
 
 put {
-  url: {{BASE_SERVER}}/users/24
-  body: json
+  url: {{BASE_SERVER}}/users
+  body: multipartForm
   auth: inherit
 }
 
@@ -14,13 +14,15 @@ headers {
   Authorization: Bearer {{jwt}}
 }
 
-body:json {
-  {
-    "name": "hello",
-    "email": "hello@gmail.com",
-    "profile_picture": "",
-    "designation": "ML engineer",
-    "birthdate": "",
-    "join_date": "2025-02-31"
-  }
+body:multipart-form {
+  user: {"name":"Rafiul Islam"} @contentType(application/json)
+  file: @file(/home/suhas/Pictures/suhas.jpg)
+}
+
+docs {
+  the following attributes are supported in `user` field-
+  1. name (required)
+  2. birthdate (optional) must be in the format YYYY-MM-DD
+  
+  `file` field: only image is supported
 }

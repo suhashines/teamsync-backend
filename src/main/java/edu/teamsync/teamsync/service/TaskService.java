@@ -89,7 +89,7 @@ public class TaskService {
                     .orElseThrow(() -> new NotFoundException("User not found with id: " + createDto.getAssignedTo()));
             task.setAssignedTo(assignedUser);
             // Set the assignedBy to the same user for now (or get from security context)
-            task.setAssignedBy(assignedUser);
+            task.setAssignedBy(userService.getCurrentUser());
         }
 
         Tasks parentTask = null;
@@ -370,5 +370,22 @@ public class TaskService {
         .message("Task status updated successfully")
         .data(taskMapper.toDto(task))
         .build();
+    }
+
+    public List<TaskResponseDTO> getUserInvolvedTasks() {
+
+        Users currentUser = userService.getCurrentUser();
+        List<Tasks> tasks = tasksRepository.findUserInvolvedTasks(currentUser.getId());
+        return tasks.stream()
+                .map(this::buildTaskResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<TaskResponseDTO> getTasksAssignedToUser() {
+        Users currentUser = userService.getCurrentUser();
+        List<Tasks> tasks = tasksRepository.findTasksAssignedToUser(currentUser.getId());
+        return tasks.stream()
+                .map(this::buildTaskResponseDto)
+                .collect(Collectors.toList());
     }
 }
