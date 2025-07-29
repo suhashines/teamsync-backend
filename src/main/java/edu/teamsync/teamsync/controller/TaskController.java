@@ -1,6 +1,5 @@
 package edu.teamsync.teamsync.controller;
 
-import edu.teamsync.teamsync.authorization.ProjectAuthorizationService;
 import edu.teamsync.teamsync.dto.taskDTO.TaskCreationDTO;
 import edu.teamsync.teamsync.dto.taskDTO.TaskResponseDTO;
 import edu.teamsync.teamsync.dto.taskDTO.TaskStatusHistoryDTO;

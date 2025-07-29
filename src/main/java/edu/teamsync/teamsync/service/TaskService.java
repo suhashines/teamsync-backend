@@ -89,7 +89,7 @@ public class TaskService {
                     .orElseThrow(() -> new NotFoundException("User not found with id: " + createDto.getAssignedTo()));
             task.setAssignedTo(assignedUser);
             // Set the assignedBy to the same user for now (or get from security context)
-            task.setAssignedBy(assignedUser);
+            task.setAssignedBy(userService.getCurrentUser());
         }
 
         Tasks parentTask = null;
