@@ -371,4 +371,13 @@ public class TaskService {
         .data(taskMapper.toDto(task))
         .build();
     }
+
+    public List<TaskResponseDTO> getCurrentUserTasks() {
+
+        Users currentUser = userService.getCurrentUser();
+        List<Tasks> tasks = tasksRepository.findUserInvolvedTasks(currentUser.getId());
+        return tasks.stream()
+                .map(this::buildTaskResponseDto)
+                .collect(Collectors.toList());
+    }
 }

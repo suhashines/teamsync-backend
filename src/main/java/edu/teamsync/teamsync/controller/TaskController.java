@@ -18,6 +18,8 @@ import java.util.List;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.GetMapping;
+
 
 
 @RestController
@@ -27,7 +29,22 @@ public class TaskController {
 
     private final TaskService tasksService;
 
-    @GetMapping("/{id}")
+    @GetMapping("/user/current")
+    public ResponseEntity<SuccessResponse<List<TaskResponseDTO>>> getCurrentUserTasks() {
+
+        List<TaskResponseDTO> tasks = tasksService.getCurrentUserTasks();
+
+        SuccessResponse<List<TaskResponseDTO>> response = SuccessResponse.<List<TaskResponseDTO>>builder()
+                .code(HttpStatus.OK.value())
+                .status(HttpStatus.OK)
+                .message("Current user tasks retrieved successfully")
+                .data(tasks)
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping(path = "/{id}")
     public ResponseEntity<SuccessResponse<TaskResponseDTO>> getTaskById(@PathVariable Long id) {
         TaskResponseDTO task = tasksService.getTaskById(id);
 
