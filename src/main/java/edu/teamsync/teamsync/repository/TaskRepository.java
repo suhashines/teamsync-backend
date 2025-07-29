@@ -31,4 +31,7 @@ public interface TaskRepository extends JpaRepository<Tasks, Long> {
 
     @Query("SELECT t FROM Tasks t WHERE t.assignedBy.id = :userId OR t.assignedTo.id = :userId ORDER BY t.assignedAt DESC")
     List<Tasks> findUserInvolvedTasks(@Param("userId") Long userId);
+
+    @Query("SELECT t FROM Tasks t WHERE t.assignedTo.id = :userId ORDER BY t.assignedAt DESC")
+    List<Tasks> findTasksAssignedToUser(@Param("userId") Long userId);
 }

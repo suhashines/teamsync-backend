@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 
 
@@ -28,10 +30,10 @@ public class TaskController {
 
     private final TaskService tasksService;
 
-    @GetMapping("/user/current")
-    public ResponseEntity<SuccessResponse<List<TaskResponseDTO>>> getCurrentUserTasks() {
+    @GetMapping("/user/involved")
+    public ResponseEntity<SuccessResponse<List<TaskResponseDTO>>> getUserInvolvedTasks() {
 
-        List<TaskResponseDTO> tasks = tasksService.getCurrentUserTasks();
+        List<TaskResponseDTO> tasks = tasksService.getUserInvolvedTasks();
 
         SuccessResponse<List<TaskResponseDTO>> response = SuccessResponse.<List<TaskResponseDTO>>builder()
                 .code(HttpStatus.OK.value())
@@ -42,6 +44,20 @@ public class TaskController {
 
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/user/assigned")
+    public ResponseEntity<SuccessResponse<List<TaskResponseDTO>>> getTasksAssignedToUser() {
+        List<TaskResponseDTO> tasks = tasksService.getTasksAssignedToUser();
+
+        SuccessResponse<List<TaskResponseDTO>> response = SuccessResponse.<List<TaskResponseDTO>>builder()
+                .code(HttpStatus.OK.value())
+                .status(HttpStatus.OK)
+                .message("Tasks assigned to user retrieved successfully")
+                .data(tasks)
+                .build();
+        return ResponseEntity.ok(response);
+    }
+    
 
     @GetMapping(path = "/{id}")
     public ResponseEntity<SuccessResponse<TaskResponseDTO>> getTaskById(@PathVariable Long id) {

@@ -372,10 +372,18 @@ public class TaskService {
         .build();
     }
 
-    public List<TaskResponseDTO> getCurrentUserTasks() {
+    public List<TaskResponseDTO> getUserInvolvedTasks() {
 
         Users currentUser = userService.getCurrentUser();
         List<Tasks> tasks = tasksRepository.findUserInvolvedTasks(currentUser.getId());
+        return tasks.stream()
+                .map(this::buildTaskResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<TaskResponseDTO> getTasksAssignedToUser() {
+        Users currentUser = userService.getCurrentUser();
+        List<Tasks> tasks = tasksRepository.findTasksAssignedToUser(currentUser.getId());
         return tasks.stream()
                 .map(this::buildTaskResponseDto)
                 .collect(Collectors.toList());
