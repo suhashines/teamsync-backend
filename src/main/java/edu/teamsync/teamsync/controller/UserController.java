@@ -60,19 +60,19 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    // @GetMapping("/{id}")
-    // public ResponseEntity<SuccessResponse<UserResponseDTO>> getUser(@PathVariable Long id) {
-    //     UserResponseDTO user = userService.getUser(id);
+    @GetMapping("/{id}")
+    public ResponseEntity<SuccessResponse<UserResponseDTO>> getUser(@PathVariable Long id) {
+        UserResponseDTO user = userService.getUser(id);
 
-    //     SuccessResponse<UserResponseDTO> response = SuccessResponse.<UserResponseDTO>builder()
-    //             .code(HttpStatus.OK.value())
-    //             .status(HttpStatus.OK)
-    //             .message("User retrieved successfully")
-    //             .data(user)
-    //             .build();
+        SuccessResponse<UserResponseDTO> response = SuccessResponse.<UserResponseDTO>builder()
+                .code(HttpStatus.OK.value())
+                .status(HttpStatus.OK)
+                .message("User retrieved successfully")
+                .data(user)
+                .build();
 
-    //     return ResponseEntity.ok(response);
-    // }
+        return ResponseEntity.ok(response);
+    }
 
     @PutMapping("/{id}")
     public ResponseEntity<SuccessResponse<Void>> updateUser(
@@ -119,18 +119,18 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/projects")
-    public ResponseEntity<SuccessResponse<List<UserProjectDTO>>> getCurrentUserProjects() {
-        List<UserProjectDTO> userProjects = userService.getCurrentUserProjects();
+    // @GetMapping("/projects")
+    // public ResponseEntity<SuccessResponse<List<UserProjectDTO>>> getCurrentUserProjects() {
+    //     List<UserProjectDTO> userProjects = userService.getCurrentUserProjects();
 
-        SuccessResponse<List<UserProjectDTO>> response = SuccessResponse.<List<UserProjectDTO>>builder()
-                .code(HttpStatus.OK.value())
-                .status(HttpStatus.OK)
-                .message("User projects retrieved successfully")
-                .data(userProjects)
-                .metadata(Map.of("count", userProjects.size()))
-                .build();
+    //     SuccessResponse<List<UserProjectDTO>> response = SuccessResponse.<List<UserProjectDTO>>builder()
+    //             .code(HttpStatus.OK.value())
+    //             .status(HttpStatus.OK)
+    //             .message("User projects retrieved successfully")
+    //             .data(userProjects)
+    //             .metadata(Map.of("count", userProjects.size()))
+    //             .build();
 
-        return ResponseEntity.ok(response);
-    }
+    //     return ResponseEntity.ok(response);
+    // }
 }
