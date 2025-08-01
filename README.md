@@ -20,7 +20,7 @@ cd teamsync-backend
 * Create an env with the following secrets
 
 ```bash
-zure.storage.connection-string=${AZURE_CONNECTION_STRING}
+azure.storage.connection-string=${AZURE_CONNECTION_STRING}
 azure.storage.container-name=${AZURE_CONTAINER_NAME}
 azure.storage.account-name=${AZURE_ACCOUNT_NAME}
 azure.storage.sas-token=${AZURE_SAS_TOKEN}
